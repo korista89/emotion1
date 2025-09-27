@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>감정데이터분석도구 Pro — Google 동기화 최종(연동 확정)</title>
+  <style>
+    :root{--primary:#6366f1;--bg:#f5f7fb;--panel:#fff;--border:#e5e7eb;--text:#0f172a;--muted:#6b7280;--danger:#ef4444;--chip:#f8fafc;--ok:#16a34a}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;color:var(--text)}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:20px;box-shadow:0 12px 30px rgba(0,0,0,.06);padding:16px}
+    .tabs{display:flex;gap:10px;overflow:auto;margin-bottom:12px}
+    .tab{padding:12px 16px;border-radius:16px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:700;white-space:nowrap}
+    .tab.active{background:var(--primary);color:#fff;border-color:transparent}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .pill{padding:6px 12px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;white-space:nowrap}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:700;min-height:40px}
+    .btn.primary{background:var(--primary);border-color:transparent;color:#fff}
+    .btn.danger{background:#ef4444;border-color:transparent;color:#fff}
+    .btn.ok{background:var(--ok);border-color:transparent;color:#fff}
+    .muted{color:var(--muted)} .hide{display:none!important}
+    input[type=text],input[type=tel],input[type=date],input[type=password],select,textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px}
+    .scroller{display:flex;gap:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 2px}
+    .stu{flex:0 0 220px;background:#fff;border:2px solid var(--border);border-radius:18px;padding:14px;text-align:center;scroll-snap-align:center}
+    .stu.selected{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.25) inset}
+    .avatar{width:64px;height:64px;border-radius:50%;object-fit:cover;background:#e5e7eb;border:2px solid #fff;box-shadow:0 6px 14px rgba(0,0,0,.06)}
+    .emoList{display:grid;gap:14px}
+    .emoBtn{display:flex;align-items:center;gap:14px;border:1px solid var(--border);border-radius:16px;padding:14px;background:#fff;cursor:pointer}
+    .emoBtn.active{border-color:#6366f1;background:#eef2ff}
+    .emoEmoji{font-size:28px;line-height:1}
+    .emoTitle{font-weight:800}
+    .emoScale{font-size:12px;color:#64748b}
+    .context{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .chip{padding:10px 12px;border-radius:999px;border:1px solid var(--border);background:var(--chip);font-size:13px;cursor:pointer;text-align:center;user-select:none}
+    .chip.selected{background:#6366f1;color:#fff;border-color:transparent}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{border:1px solid #ddd;padding:6px;text-align:center;font-size:13px}
+    th{background:#f3f4f6}
+    canvas{width:100%;height:360px;border:1px solid var(--border);border-radius:12px;background:#fff}
+    @media (max-width:640px){ .stu{flex:0 0 170px} }
+    @media print{ .no-print{display:none!important} body{background:#fff} .card{border:0;box-shadow:none} @page{size:A4;margin:12mm} }
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;background:#111827;color:#fff;padding:2px 6px;border-radius:6px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section id="login" class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2>🔐 반 선택 로그인</h2>
+      <div class="muted">A~F: a123~f123 · 관리자: admin123</div>
+    </div>
+    <div class="row" id="classGrid"></div>
+    <div id="pwArea" class="hide">
+      <div class="row">
+        <input id="pw" type="password" placeholder="비밀번호 (예: a123)" />
+        <button id="btnLogin" class="btn primary">로그인</button>
+      </div>
+      <div class="muted" style="margin-top:6px"><span class="pill">상태</span> <span id="syncStatus" class="muted">초기화</span></div>
+    </div>
+  </section>
+
+  <section id="app" class="card hide">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2>📘 감정데이터분석도구 Pro — 그래프/보고서/관리(연동확정)</h2>
+      <div class="row no-print">
+        <div id="who" class="pill">-</div>
+        <button id="btnLogout" class="btn">로그아웃</button>
+      </div>
+    </div>
+
+    <div class="tabs no-print" id="tabs">
+      <button class="tab active" data-tab="am">🏫 등교</button>
+      <button class="tab" data-tab="pm">🏡 하교</button>
+      <button class="tab" data-tab="graph">📈 그래프·보고서</button>
+      <button class="tab" data-tab="data">📋 데이터</button>
+      <button class="tab" data-tab="list">👥 학생 목록</button>
+      <button class="tab" data-tab="new">➕ 신규 등록</button>
+      <button class="tab" data-tab="admin">🛠️ 관리자</button>
+    </div>
+
+    <div id="tab-am">
+      <div class="row" style="justify-content:center;gap:8px">
+        <button class="btn" id="amPrev">◀</button><div class="pill" id="amDate"></div><button class="btn" id="amNext">▶</button>
+      </div>
+      <h3>학생 선택</h3><div id="amScroller" class="scroller"></div>
+      <div id="amForm" class="hide">
+        <h3 id="amWho" style="text-align:center"></h3>
+        <div class="emoList" id="amEmotions"></div>
+        <div id="amCtxWrap" class="hide"><div style="height:10px"></div><div class="muted" style="text-align:center">간편 맥락 (복수 선택)</div><div id="amCtx" class="context"></div></div>
+        <div class="row"><button class="btn primary" id="amSave">저장</button></div>
+      </div>
+    </div>
+
+    <div id="tab-pm" class="hide">
+      <div class="row" style="justify-content:center;gap:8px">
+        <button class="btn" id="pmPrev">◀</button><div class="pill" id="pmDate"></div><button class="btn" id="pmNext">▶</button>
+      </div>
+      <h3>학생 선택</h3><div id="pmScroller" class="scroller"></div>
+      <div id="pmForm" class="hide">
+        <h3 id="pmWho" style="text-align:center"></h3>
+        <div class="emoList" id="pmEmotions"></div>
+        <div id="pmCtxWrap" class="hide"><div style="height:10px"></div><div class="muted" style="text-align:center">간편 맥락 (복수 선택)</div><div id="pmCtx" class="context"></div></div>
+        <div class="row"><button class="btn primary" id="pmSave">저장</button></div>
+      </div>
+    </div>
+
+    <div id="tab-graph" class="hide">
+      <h3>학생별 선 그래프 및 자동 분석 보고서</h3>
+      <div class="row">
+        <select id="graphStudent"></select>
+        <input type="date" id="fromDate"><input type="date" id="toDate">
+        <button class="btn" id="btnGraph">그래프/보고서 생성</button>
+        <button class="btn" id="btnPrint">🖨️ 인쇄 / PDF</button>
+      </div>
+      <div style="height:8px"></div>
+      <h3 id="graphTitle" style="text-align:center"></h3>
+      <canvas id="chart"></canvas>
+      <div class="muted" style="font-size:12px;margin-top:6px;text-align:center">
+        <b>범례:</b> <span style="color:#ef4444">● 빨간 원=등교(AM)</span> · <span style="color:#3b82f6">▲ 파란 세모=하교(PM)</span> · 점 위 숫자는 점수
+      </div>
+
+      <div style="height:14px"></div>
+      <h3>데이터 편집</h3>
+      <table>
+        <thead><tr><th>날짜</th><th>구분</th><th>점수(1–5)</th><th>맥락</th><th>수정</th><th>삭제</th></tr></thead>
+        <tbody id="editBody"></tbody>
+      </table>
+
+      <div style="height:16px"></div>
+      <h3>자동 분석 보고서</h3>
+      <div id="reportBox" class="card" style="border-radius:16px"></div>
+    </div>
+
+    <div id="tab-data" class="hide">
+      <h3>전체 데이터</h3>
+      <table><thead><tr><th>날짜</th><th>학생</th><th>등교</th><th>하교</th><th>맥락</th></tr></thead><tbody id="tbody"></tbody></table>
+      <div class="row no-print" style="margin-top:8px;justify-content:flex-end"><button class="btn danger" id="resetAll">전체 초기화</button></div>
+    </div>
+
+    <div id="tab-list" class="hide"><h3>학생 목록</h3><div id="stuList"></div></div>
+
+    <div id="tab-new" class="hide">
+      <h3>신규 학생 등록</h3>
+      <div class="row"><input id="photo" type="file" accept="image/*" class="no-print"><input id="newName" type="text" placeholder="학생 이름"><button class="btn" id="addStu">등록</button></div>
+      <div style="height:8px"></div>
+      <label>학급</label><div id="chipsClass" class="context"></div>
+      <label>성별</label><div id="chipsSex" class="context"></div>
+      <label>진단</label><div id="chipsDx" class="context"></div>
+      <label>의사소통</label><div id="chipsComm" class="context"></div>
+      <label>감각 프로필</label><div id="chipsSensory" class="context"></div>
+      <label>선호 강화제</label><div id="chipsReinf" class="context"></div>
+      <label>주요 유발상황</label><div id="chipsTrigger" class="context"></div>
+      <label>의료/약물</label><div id="chipsMeds" class="context"></div>
+      <div class="row"><input id="newParent" type="tel" placeholder="보호자 연락처"/></div>
+    </div>
+
+    <div id="tab-admin" class="hide">
+      <h3>관리자 도구</h3>
+      <div class="row">
+        <div style="flex:1;min-width:260px">
+          <label>Sync URL</label>
+          <input id="cfgUrl" type="text" placeholder="웹앱 URL">
+        </div>
+        <div style="flex:1;min-width:260px">
+          <label>Shared Secret</label>
+          <input id="cfgSecret" type="text" placeholder="공유 시크릿(길고 임의)">
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="cfgSave" class="btn ok">저장</button>
+        <button id="syncPull" class="btn">서버 → 로컬</button>
+        <button id="syncPush" class="btn">로컬 → 서버</button>
+        <button id="exportJson" class="btn">JSON 내보내기</button>
+        <label class="btn"><input id="importJson" type="file" accept="application/json" class="hide">JSON 가져오기</label>
+        <button id="purgeLocal" class="btn danger">로컬 전체 초기화</button>
+      </div>
+      <div class="muted" style="margin-top:6px">
+        현재 상태: <span id="adminStatus" class="kbd">idle</span>
+      </div>
+      <div class="muted" style="margin-top:6px">
+        <span class="pill">주의</span> 시크릿은 공개 공간에 공유하지 마세요.
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const DEFAULT_SYNC_URL = "https://script.google.com/macros/s/AKfycbzWx_dxqYYs8XTwvTYeWTV9bsuIfxHNLkI6uGr_98bZegEYuPmvAkoC_FmVhqrmP66w/exec";
+  const DEFAULT_SECRET   = "SEK-2b7c3c0a-strong-shared-secret";
+  const KEY_ST="students_v20_sheet", KEY_ED="emotion_v20_sheet", KEY_SES="session_v20_sheet";
+  const KEY_CFG="cfg_sync_v20";
+  const PWD={A:"a123",B:"b123",C:"c123",D:"d123",E:"e123",F:"f123",admin:"admin123"};
+  let currentUser=null, students=[], emotion={};
+
+  const EMO={5:{emoji:"😄",name:"행복",scale:"자발적 미소·긍정 언어, 도움 없이 과제 참여 ≥90%, 문제행동 0회"},
+            4:{emoji:"🙂",name:"좋음",scale:"지시 따름 80% 내외, 가벼운 도움, 문제행동 0–1회·짧음"},
+            3:{emoji:"😐",name:"보통",scale:"중립 표정, 참여 변동, 지시 따름 60–80%"},
+            2:{emoji:"😔",name:"불편/슬픔",scale:"회피·한숨·느린 반응, 지시 따름 40–60%, 지원 필요"},
+            1:{emoji:"😭",name:"격앙/괴로움",scale:"울음/고함·강한 불편, 지시 따름 <40%, 즉각 중재 필요"}};
+  const CTX=["😴 수면부족","💊 건강저하","🏠 가정이슈","🔄 활동전환","🧒 또래갈등","👀 관심요구","🎁 강화제요구","🚪 과제회피","🌀 감각추구","🔊 소음민감","🍽️ 배고픔","🤕 통증/불편","📅 일정변경","🚌 등하교피로","🌤️ 날씨영향"];
+  const OPS={classes:["A","B","C","D","E","F"],sex:["남","여"],dx:["지적장애","자폐스펙트럼","ADHD","학습장애","정서·행동장애","기타"],comm:["구어","PECS","AAC","제스처","제한적 언어","기타"],sensory:["청각 과민","시각 과민","촉각 과민","압박 선호","움직임 추구","기타"],reinf:["스티커","음식(스낵/음료)","활동(휴식·산책)","전자기기","사회적 칭찬","기타"],trigger:["과제 전환","소음","예기치 않은 일정 변경","또래 갈등","요구 거부","기타"],meds:["없음","항정신병제","항불안제","항경련제","기타"]};
+
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  const fmt=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().split("T")[0];
+  const clamp=n=>Math.max(1,Math.min(5,n|0));
+
+  // Config helpers
+  function getCfg(){ try{ return JSON.parse(localStorage.getItem(KEY_CFG)||"{}"); }catch{ return {}; } }
+  function cfgUrl(){ return getCfg().url || DEFAULT_SYNC_URL; }
+  function cfgSecret(){ return getCfg().secret || DEFAULT_SECRET; }
+  function setCfg(url,secret){ localStorage.setItem(KEY_CFG, JSON.stringify({url, secret})); $("#adminStatus").textContent="saved"; }
+
+  function toast(msg){ const s=$("#syncStatus"); if(s) s.textContent=msg; console.log(msg); $("#adminStatus").textContent=msg; }
+  function persist(){ localStorage.setItem(KEY_ST,JSON.stringify(students)); localStorage.setItem(KEY_ED,JSON.stringify(emotion)); buildTable(); }
+
+  // 로그인
+  function buildClassButtons(){
+    const g=$("#classGrid");
+    ["A","B","C","D","E","F","admin"].forEach(k=>{
+      const b=document.createElement("button"); b.className="btn"; b.textContent=(k==="admin"?"🔑 관리자":"학급 "+k);
+      b.onclick=()=>{ currentUser=k; $("#pwArea").classList.remove("hide"); setTimeout(()=>$("#pw").focus(),50); };
+      g.appendChild(b);
+    });
+  }
+  function login(){
+    const val=$("#pw").value.trim();
+    if(!currentUser) return toast("학급 선택");
+    if(val===PWD[currentUser]){
+      localStorage.setItem(KEY_SES,JSON.stringify({user:currentUser,t:Date.now()}));
+      $("#login").classList.add("hide"); $("#app").classList.remove("hide");
+      $("#who").textContent=(currentUser==="admin"?"관리자":currentUser+"학급");
+      pullServer(true); buildAll();
+    } else toast("비밀번호 오류");
+  }
+  function restoreSession(){
+    try{ const s=JSON.parse(localStorage.getItem(KEY_SES)||"null");
+      if(s && PWD[s.user]){ currentUser=s.user; $("#login").classList.add("hide"); $("#app").classList.remove("hide"); $("#who").textContent=(currentUser==="admin"?"관리자":currentUser+"학급"); pullServer(true); buildAll(); }
+    }catch{}
+  }
+  function logout(){ localStorage.removeItem(KEY_SES); location.reload(); }
+
+  // 칩
+  function chipContainer(id,ops,single=false){
+    const el=$(id); el.innerHTML=ops.map(v=>`<div class="chip" data-v="${v}">${v}</div>`).join("");
+    el.onclick=e=>{ const c=e.target.closest(".chip"); if(!c) return; if(single){ $$(id+" .chip").forEach(x=>x.classList.remove("selected")); c.classList.add("selected"); } else c.classList.toggle("selected"); };
+  }
+  function getChips(id){ return $$(id+" .chip.selected").map(x=>x.dataset.v); }
+
+  // 학생
+  function buildStuList(){
+    const list=currentUser==="admin"?students:students.filter(s=>(s.classes||[]).includes(currentUser));
+    $("#stuList").innerHTML = list.map(s=>`
+      <div class="row" style="justify-content:space-between;border-bottom:1px solid #e5e7eb;padding:8px 0">
+        <div class="row"><img class="avatar" src="${s.photo||""}"><div><div><b>${s.name}</b> <span class="muted">(${(s.classes||[]).join(", ")})</span></div>
+        <div class="muted" style="font-size:12px">${(s.dx||[]).join("/")} · ${(s.comm||[]).join("/")} · ${(s.sensory||[]).join("/")}</div></div></div>
+        <button class="btn danger" data-del="${s.id}">삭제</button></div>`).join("") || `<div class="muted">학생 없음</div>`;
+    $("#stuList").onclick = (e)=>{ const b=e.target.closest("button[data-del]"); if(!b) return; const id=b.dataset.del; students=students.filter(s=>s.id!=id); persist(); buildStuList(); buildStudents("#amScroller","am"); buildStudents("#pmScroller","pm"); buildGraphStudentSelect(); };
+  }
+  function imgToDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(file); }); }
+  async function addStu(){
+    const name=$("#newName").value.trim(); if(!name) return toast("이름 입력");
+    let photo=null; const f=$("#photo").files[0]; if(f) photo=await imgToDataURL(f);
+    const s={id:Date.now(),name,photo,classes:getChips("#chipsClass"),sex:getChips("#chipsSex")[0]||"",dx:getChips("#chipsDx"),comm:getChips("#chipsComm"),sensory:getChips("#chipsSensory"),reinf:getChips("#chipsReinf"),trigger:getChips("#chipsTrigger"),meds:getChips("#chipsMeds"),parent:$("#newParent").value.trim()};
+    students.push(s);
+    ["#chipsClass","#chipsSex","#chipsDx","#chipsComm","#chipsSensory","#chipsReinf","#chipsTrigger","#chipsMeds"].forEach(id=>$$(id+" .chip").forEach(c=>c.classList.remove("selected")));
+    $("#newName").value=""; $("#newParent").value=""; $("#photo").value="";
+    persist(); buildStuList(); buildStudents("#amScroller","am"); buildStudents("#pmScroller","pm"); buildGraphStudentSelect();
+    pushServer();
+  }
+  function buildStudents(container,prefix){
+    const all=currentUser==="admin"?students:students.filter(s=>(s.classes||[]).includes(currentUser));
+    const el=$(container);
+    el.innerHTML = all.map(s=>`
+      <div class="stu" data-id="${s.id}"><img class="avatar" src="${s.photo||""}"><div style="font-weight:800;margin-top:6px">${s.name}</div><div class="muted" style="font-size:12px">${(s.classes||[])[0]||""}</div></div>`).join("") || `<div class="muted">학생 없음</div>`;
+    el.onclick = (e)=>{ const card=e.target.closest(".stu"); if(!card) return; $$(container+" .stu").forEach(x=>x.classList.remove("selected")); card.classList.add("selected"); const sid=card.dataset.id; const nm=(students.find(x=>x.id==sid)||{}).name||""; (prefix==="am"?$("#amForm"):$("#pmForm")).classList.remove("hide"); (prefix==="am"?$("#amWho"):$("#pmWho")).textContent = `${nm} 학생의 감정`; el.dataset.sel=sid; };
+  }
+
+  // 감정 입력
+  function buildEmo(prefix){
+    const box= prefix==="am" ? $("#amEmotions") : $("#pmEmotions");
+    box.innerHTML = [5,4,3,2,1].map(sc=>`
+      <div class="emoBtn" data-score="${sc}"><div class="emoEmoji">${EMO[sc].emoji}</div>
+        <div><div class="emoTitle">${sc}점 (${EMO[sc].name})</div><div class="emoScale">${EMO[sc].scale} · 누구나 관찰 가능</div></div>
+      </div>`).join("");
+    box.onclick = (e)=>{ const b=e.target.closest(".emoBtn"); if(!b) return; $$("#"+(prefix==="am"?"amEmotions":"pmEmotions")+" .emoBtn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); box.dataset.score=b.dataset.score; (prefix==="am"?$("#amCtxWrap"):$("#pmCtxWrap")).classList.remove("hide"); };
+  }
+  function buildCtx(container){ const el=$(container); el.innerHTML = CTX.map(t=>`<div class="chip" data-k="${t}">${t}</div>`).join(""); el.onclick = (e)=>{ const c=e.target.closest(".chip"); if(!c) return; c.classList.toggle("selected"); }; }
+
+  // 날짜
+  let amDate=new Date(), pmDate=new Date();
+  const dateK=d=>d.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+  function setDates(){ $("#amDate").textContent=dateK(amDate); $("#pmDate").textContent=dateK(pmDate); }
+
+  function save(prefix){
+    const scroller = prefix==="am" ? $("#amScroller") : $("#pmScroller"); const sid=scroller.dataset.sel;
+    const score = parseInt((prefix==="am"?$("#amEmotions"):$("#pmEmotions")).dataset.score||"0",10);
+    if(!sid || !score) return toast("학생/감정 선택");
+    const date = fmt(prefix==="am"?amDate:pmDate);
+    emotion[date]=emotion[date]||{};
+    const stu=students.find(s=>s.id==sid);
+    if(!emotion[date][sid]) emotion[date][sid]={name:stu?.name||""};
+    const ctx=$$(prefix==="am"?"#amCtx .chip.selected":"#pmCtx .chip.selected").map(x=>x.dataset.k);
+    emotion[date][sid][prefix==="am"?"morning":"afternoon"]={score:clamp(score),context:ctx};
+    persist();
+    alert("저장됨"); pushServer();
+    $$(prefix==="am"?"#amEmotions .emoBtn":"#pmEmotions .emoBtn").forEach(x=>x.classList.remove("active"));
+    (prefix==="am"?$("#amCtxWrap"):$("#pmCtxWrap")).classList.add("hide");
+    $$(prefix==="am"?"#amCtx .chip":"#pmCtx .chip").forEach(x=>x.classList.remove("selected"));
+  }
+
+  // 표
+  function buildTable(){
+    const tb=$("#tbody");
+    const rows = Object.entries(emotion).sort((a,b)=>b[0].localeCompare(a[0])).flatMap(([date,daily])=>{
+      return Object.entries(daily).map(([id,rec])=>{
+        const m = rec.morning? `${rec.morning.score}점 ${EMO[rec.morning.score].emoji}`:"-";
+        const p = rec.afternoon? `${rec.afternoon.score}점 ${EMO[rec.afternoon.score].emoji}`:"-";
+        const ctx = [...new Set([...(rec.morning?.context||[]),...(rec.afternoon?.context||[])])].join(", ");
+        return `<tr><td>${date}</td><td>${rec.name}</td><td>${m}</td><td>${p}</td><td>${ctx}</td></tr>`;
+      });
+    }).join("");
+    tb.innerHTML = rows || `<tr><td colspan="5" class="muted">데이터가 없습니다.</td></tr>`;
+  }
+
+  // 그래프
+  function getRangeData(studentId,from,to){
+    const labels=[], am=[], pm=[], dates=[];
+    const fromD=new Date(from), toD=new Date(to); if(isNaN(fromD)||isNaN(toD)) return {labels,am,pm,dates};
+    const cur=new Date(fromD);
+    while(cur<=toD){
+      const k=fmt(cur); const r=emotion[k]?.[studentId];
+      labels.push(k.slice(5)); dates.push(k);
+      am.push(r?.morning?.score ?? null);
+      pm.push(r?.afternoon?.score ?? null);
+      cur.setDate(cur.getDate()+1);
+    }
+    return {labels, am, pm, dates};
+  }
+  function drawGraphTitle(name){ $("#graphTitle").textContent = name ? `${name} 학생 감정 모니터링 그래프` : ""; }
+  function drawChart(canvasId, labels, am, pm){
+    const c=document.getElementById(canvasId), ctx=c.getContext('2d');
+    const dpr=window.devicePixelRatio||1; c.width=c.clientWidth*dpr; c.height=c.clientHeight*dpr; ctx.scale(dpr,dpr);
+    ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
+    const W=c.clientWidth,H=c.clientHeight,pad=42;
+    ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.moveTo(pad,pad); ctx.lineTo(pad,H-pad); ctx.stroke();
+    for(let s=1;s<=5;s++){ const y=H-pad-(H-2*pad)*(s-1)/4; ctx.fillStyle="#64748b"; ctx.font="12px sans-serif"; ctx.fillText(String(s), 10, y+4); ctx.strokeStyle="#f1f5f9"; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke(); }
+    if(!labels.length) return;
+    const step=(W-2*pad)/Math.max(1,labels.length-1);
+    const yOf=v=>H-pad-(H-2*pad)*((v-1)/4);
+    labels.forEach((lab,i)=>{ const x=pad+i*step; ctx.fillStyle="#64748b"; if(i%Math.ceil(labels.length/8)===0) ctx.fillText(lab, x-12, H-pad+14); });
+    ctx.fillStyle="#ef4444"; ctx.strokeStyle="#ef4444"; ctx.lineWidth=1.5;
+    am.forEach((v,i)=>{ if(v==null) return; const x=pad+i*step, y=yOf(v); ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill(); ctx.font="11px sans-serif"; ctx.fillText(String(v), x+6, y-6); });
+    ctx.fillStyle="#3b82f6"; ctx.strokeStyle="#3b82f6";
+    pm.forEach((v,i)=>{ if(v==null) return; const x=pad+i*step, y=yOf(v); ctx.beginPath(); ctx.moveTo(x, y-5); ctx.lineTo(x-5, y+4); ctx.lineTo(x+5, y+4); ctx.closePath(); ctx.fill(); ctx.font="11px sans-serif"; ctx.fillText(String(v), x+6, y-6); });
+  }
+
+  // 편집 테이블
+  function buildEditTable(studentId, from, to){
+    const body=$("#editBody"); body.innerHTML="";
+    const cur=new Date(from), end=new Date(to);
+    while(cur<=end){
+      const k=fmt(cur); const rec=emotion[k]?.[studentId];
+      ["morning","afternoon"].forEach(slot=>{
+        const v=rec?.[slot]?.score ?? ""; const ctxArr=rec?.[slot]?.context||[];
+        const tr=document.createElement("tr");
+        tr.innerHTML = `<td>${k}</td><td>${slot==="morning"?"등교(AM)":"하교(PM)"}</td>
+          <td><input type="number" min="1" max="5" value="${v}" style="width:70px"/></td>
+          <td><input type="text" placeholder="쉼표로 구분" value="${ctxArr.join(", ")}" /></td>
+          <td><button class="btn" data-act="save">수정</button></td>
+          <td><button class="btn danger" data-act="del">삭제</button></td>`;
+        tr.dataset.date=k; tr.dataset.slot=slot; tr.dataset.sid=studentId;
+        body.appendChild(tr);
+      });
+      cur.setDate(cur.getDate()+1);
+    }
+    body.onclick=(e)=>{
+      const btn=e.target.closest("button"); if(!btn) return;
+      const tr=btn.closest("tr"); const d=tr.dataset.date, slot=tr.dataset.slot, sid=tr.dataset.sid;
+      if(btn.dataset.act==="save"){
+        const score=parseInt(tr.querySelector('input[type="number"]').value||"0",10);
+        const ctx=tr.querySelector('input[type="text"]').value.split(",").map(s=>s.trim()).filter(Boolean);
+        if(!score) return alert("점수 1~5 입력");
+        emotion[d]=emotion[d]||{}; emotion[d][sid]=emotion[d][sid]||{name:(students.find(s=>s.id==sid)||{}).name||""};
+        emotion[d][sid][slot]={score:clamp(score),context:ctx};
+        persist(); pushServer(); alert("수정 완료");
+      } else if(btn.dataset.act==="del"){
+        if(!confirm("삭제하시겠습니까?")) return;
+        if(emotion[d]?.[sid]?.[slot]) delete emotion[d][sid][slot];
+        if(emotion[d]?.[sid] && !emotion[d][sid].morning && !emotion[d][sid].afternoon) delete emotion[d][sid];
+        if(emotion[d] && Object.keys(emotion[d]).length===0) delete emotion[d];
+        persist(); pushServer(); tr.remove();
+      }
+    };
+  }
+
+  // 보고서
+  function genReport(studentId, from, to){
+    const s = students.find(x=>x.id==studentId); if(!s){ $("#reportBox").innerHTML="학생 정보가 없습니다."; return; }
+    const cur=new Date(from), end=new Date(to);
+    const recs=[];
+    while(cur<=end){ const k=fmt(cur); const r=emotion[k]?.[studentId]; if(r?.morning) recs.push({date:k,slot:"AM",score:r.morning.score,ctx:r.morning.context||[]}); if(r?.afternoon) recs.push({date:k,slot:"PM",score:r.afternoon.score,ctx:r.afternoon.context||[]}); cur.setDate(cur.getDate()+1); }
+    const n=recs.length;
+    const avg = (arr)=> arr.length? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2):"-";
+    const amScores=recs.filter(r=>r.slot==="AM").map(r=>r.score);
+    const pmScores=recs.filter(r=>r.slot==="PM").map(r=>r.score);
+    const lowDays = recs.filter(r=>r.score<=2).length;
+    const ctxCount={}; recs.forEach(r=>r.ctx.forEach(c=>ctxCount[c]=(ctxCount[c]||0)+1));
+    const topCtx = Object.entries(ctxCount).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`${k}(${v})`);
+
+    const dxLine = (s.dx||[]).join(", ") || "미등록";
+    const commLine = (s.comm||[]).join(", ") || "미등록";
+    const sensLine = (s.sensory||[]).join(", ") || "미등록";
+
+    const parts = [];
+    parts.push(`<b>기본 정보</b>: 학급 ${(s.classes||[]).join("/")||"미등록"}, 진단 ${dxLine}, 의사소통 ${commLine}, 감각 ${sensLine}`);
+    const lines = [];
+    lines.push(`<b>요약</b>: 표본 ${n}개, AM 평균 ${avg(amScores)}, PM 평균 ${avg(pmScores)}, 저조(≤2) ${lowDays}회.`);
+    if(topCtx.length) lines.push(`<b>주요 맥락</b>: ${topCtx.join(", ")}.`);
+
+    const rec = [];
+    if((avg(amScores)!=="-" && parseFloat(avg(amScores))<=3) || (avg(pmScores)!=="-" && parseFloat(avg(pmScores))<=3)) rec.push("SEL·Zones of Regulation: 감정 레이블링/대처 카드 시각화");
+    if((s.comm||[]).includes("PECS") || (s.comm||[]).includes("AAC")) rec.push("PECS/AAC: 도움·휴식 요청 아이콘을 2~3개 핵심어로 간소화");
+    if((s.sensory||[]).some(x=>['청각 과민','촉각 과민','시각 과민'].includes(x))) rec.push("감각통합: 소음 차단·깊은압·시각 과부하 감소 루틴(3분)");
+    if(topCtx.join(' ').includes("과제")) rec.push("TEACCH: 과제 구조화·시각 스케줄·완료 예측 가능성 높이기");
+    if(topCtx.join(' ').includes("강화")) rec.push("ABA: 기능성 강화 제공(대체행동)·차등강화(DRA)");
+    if(topCtx.join(' ').includes("또래")) rec.push("SEL/CBT: 또래 상호작용 리허설·사회적 이야기·역할연습");
+    if(topCtx.join(' ').includes("수면")) rec.push("건강 루틴: 취침·기상 고정, 아침 저강도 운동 5분");
+    if(rec.length<5) rec.push("CPI: 고조 단계 조기 신호·비언어적 거리두기·선제적 디에스컬레이션");
+    rec.push("BCBA 협업: ABC 데이터 주 1회 검토, 기능분석 가설 업데이트");
+    rec.push("교실 적용: 2주 단위 목표-중재-평가 루프 운영");
+
+    const html = `
+      <div>${parts.join("<br>")}</div>
+      <div style="height:8px"></div>
+      <div>${lines.join("<br>")}</div>
+      <div style="height:8px"></div>
+      <b>권장 중재/교육 방법</b>
+      <ul>${rec.map(r=>`<li>${r}</li>`).join("")}</ul>
+      <div class="muted" style="font-size:12px">근거 기반 참고: ABA, TEACCH, PECS/AAC, SEL/Zones, 감각통합, CBT/DBT, 발달·인지심리, CPI.</div>
+    `;
+    $("#reportBox").innerHTML = html;
+  }
+
+  // Sync
+  async function pullServer(silent=false){
+    const url=cfgUrl(), sec=cfgSecret();
+    if(!url) return toast("SYNC_URL 미설정");
+    try{
+      const r=await fetch(url+`?action=export&key=${encodeURIComponent(sec)}`,{method:"GET"});
+      if(!r.ok) throw new Error(r.status+"");
+      const json=await r.json();
+      if(json.students && json.emotion){ students=json.students; emotion=json.emotion; persist(); buildAll(); toast("서버 최신 데이터 반영"); if(!silent) alert("동기화 완료"); }
+      else throw new Error("형식오류");
+    }catch(e){ toast("가져오기 실패: "+e); if(!silent) alert("가져오기 실패"); }
+  }
+  async function pushServer(){
+    const url=cfgUrl(), sec=cfgSecret(); if(!url) return;
+    try{ const payload={action:"push", key:sec, version:"v20", students, emotion};
+      const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      await r.text(); toast("업로드 완료");
+    }catch(e){ toast("업로드 실패: "+e); }
+  }
+
+  // 그래프 구동
+  function buildGraphStudentSelect(){
+    const sel=$("#graphStudent"); const list=currentUser==="admin"?students:students.filter(s=>(s.classes||[]).includes(currentUser));
+    sel.innerHTML = `<option value="">학생 선택</option>` + list.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+  }
+  function handleGraph(){
+    const sid=$("#graphStudent").value, from=$("#fromDate").value, to=$("#toDate").value;
+    if(!sid||!from||!to) return alert("학생과 기간을 선택하세요.");
+    const s = students.find(x=>x.id==sid);
+    drawGraphTitle(s?.name||"");
+    const {labels,am,pm} = getRangeData(sid,from,to);
+    drawChart("chart",labels,am,pm);
+    buildEditTable(sid,from,to);
+    genReport(sid,from,to);
+  }
+
+  function buildAll(){
+    buildStuList(); buildStudents("#amScroller","am"); buildStudents("#pmScroller","pm");
+    buildEmo("am"); buildEmo("pm"); buildCtx("#amCtx"); buildCtx("#pmCtx"); buildTable(); buildGraphStudentSelect();
+    const past=new Date(); past.setDate(past.getDate()-14); $("#fromDate").value=fmt(past); $("#toDate").value=fmt(new Date());
+    setDates();
+    $("#cfgUrl").value = cfgUrl();
+    $("#cfgSecret").value = cfgSecret();
+  }
+
+  // Admin actions
+  function exportJson(){
+    const blob = new Blob([JSON.stringify({students, emotion}, null, 2)], {type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="emotion_data_export.json"; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  }
+  function importJson(file){
+    const r=new FileReader();
+    r.onload=e=>{
+      try{ const obj=JSON.parse(e.target.result||"{}"); students=obj.students||[]; emotion=obj.emotion||{}; persist(); buildAll(); alert("가져오기 완료"); }
+      catch(err){ alert("JSON 파싱 실패: "+err); }
+    };
+    r.readAsText(file, "utf-8");
+  }
+
+  // 이벤트 바인딩
+  document.addEventListener("DOMContentLoaded", ()=>{
+    try{ students=JSON.parse(localStorage.getItem(KEY_ST)||"[]"); emotion=JSON.parse(localStorage.getItem(KEY_ED)||"{}"); }catch{ students=[]; emotion={}; }
+    if(students.length===0){ students=["김민준","이서준","박도윤","최시우"].map((n,i)=>({id:Date.now()+i,name:n,classes:["A"]})); persist(); }
+    if(!getCfg().url){ setCfg(DEFAULT_SYNC_URL, DEFAULT_SECRET); }
+    buildClassButtons(); $("#btnLogin").onclick=login; $("#pw").addEventListener("keydown",e=>{ if(e.key==="Enter") login(); }); $("#btnLogout").onclick=logout; restoreSession();
+    $("#tabs").onclick=(e)=>{ const b=e.target.closest(".tab"); if(!b)return; const tab=b.dataset.tab; $$(".tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab)); ["am","pm","graph","data","list","new","admin"].forEach(id=>$("#tab-"+id).classList.toggle("hide", id!==tab)); if(tab==="data") buildTable(); if(tab==="graph") buildGraphStudentSelect(); if(tab==="list") buildStuList(); if(tab==="admin"){ $("#cfgUrl").value=cfgUrl(); $("#cfgSecret").value=cfgSecret(); }};
+
+    // 날짜 화살표
+    $("#amPrev").onclick=()=>{ amDate.setDate(amDate.getDate()-1); setDates(); };
+    $("#amNext").onclick=()=>{ amDate.setDate(amDate.getDate()+1); setDates(); };
+    $("#pmPrev").onclick=()=>{ pmDate.setDate(pmDate.getDate()-1); setDates(); };
+    $("#pmNext").onclick=()=>{ pmDate.setDate(pmDate.getDate()+1); setDates(); };
+
+    // 저장
+    $("#amSave").onclick=()=>save("am"); $("#pmSave").onclick=()=>save("pm");
+
+    // 칩/등록
+    chipContainer("#chipsClass",OPS.classes); chipContainer("#chipsSex",OPS.sex,true); chipContainer("#chipsDx",OPS.dx); chipContainer("#chipsComm",OPS.comm); chipContainer("#chipsSensory",OPS.sensory); chipContainer("#chipsReinf",OPS.reinf); chipContainer("#chipsTrigger",OPS.trigger); chipContainer("#chipsMeds",OPS.meds);
+    $("#addStu").onclick=addStu;
+
+    // 그래프/보고서
+    $("#btnGraph").onclick=handleGraph; $("#btnPrint").onclick=()=>window.print();
+
+    // 관리자
+    $("#cfgSave").onclick=()=>{ setCfg($("#cfgUrl").value.trim(), $("#cfgSecret").value.trim()); alert("저장됨"); };
+    $("#syncPull").onclick=()=>pullServer();
+    $("#syncPush").onclick=()=>pushServer();
+    $("#exportJson").onclick=exportJson;
+    $("#importJson").onchange=(e)=>{ const f=e.target.files[0]; if(f) importJson(f); };
+    $("#purgeLocal").onclick=()=>{ if(confirm("로컬 저장 데이터를 모두 삭제합니다. 계속할까요?")){ localStorage.removeItem(KEY_ST); localStorage.removeItem(KEY_ED); localStorage.removeItem(KEY_SES); students=[]; emotion={}; buildAll(); alert("로컬 초기화 완료"); } };
+
+    buildAll();
+  });
+})();
+</script>
+</body>
+</html>
