@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>감정데이터분석도구 — 실시간 동기화(무시크릿)</title>
+  <style>
+    :root{--primary:#6366f1;--bg:#f6f7fb;--panel:#fff;--border:#e5e7eb;--text:#0f172a;--muted:#6b7280;--danger:#ef4444;--ok:#16a34a}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;color:var(--text)}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px} .card{background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 24px rgba(0,0,0,.06);padding:16px}
+    .tabs{display:flex;gap:10px;overflow:auto;margin-bottom:12px} .tab{padding:12px 16px;border-radius:14px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:700;white-space:nowrap}
+    .tab.active{background:var(--primary);color:#fff;border-color:transparent} .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .pill{padding:6px 12px;border-radius:999px;border:1px solid #c7d2fe;background:#eef2ff;white-space:nowrap} .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:9px 14px;border-radius:12px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:700;min-height:38px}
+    .btn.primary{background:var(--primary);border-color:transparent;color:#fff} .btn.danger{background:#ef4444;border-color:transparent;color:#fff} .muted{color:var(--muted)} .hide{display:none!important}
+    input,select,textarea{width:100%;padding:9px;border:1px solid var(--border);border-radius:10px}
+    .scroller{display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 2px} .stu{flex:0 0 210px;background:#fff;border:2px solid var(--border);border-radius:16px;padding:12px;text-align:center}
+    .stu.selected{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.22) inset} .avatar{width:64px;height:64px;border-radius:50%;object-fit:cover;background:#e5e7eb;border:2px solid #fff;box-shadow:0 6px 14px rgba(0,0,0,.06)}
+    .emoList{display:grid;gap:10px} .emoBtn{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:14px;padding:12px;background:#fff;cursor:pointer}
+    .emoBtn.active{border-color:#6366f1;background:#eef2ff} .emoEmoji{font-size:26px} .emoTitle{font-weight:800} .emoScale{font-size:12px;color:#64748b}
+    .context{display:grid;grid-template-columns:repeat(3,1fr);gap:8px} .chip{padding:9px 12px;border-radius:999px;border:1px solid var(--border);background:#f8fafc;font-size:13px;cursor:pointer;text-align:center;user-select:none}
+    .chip.selected{background:#6366f1;color:#fff;border-color:transparent} table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{border:1px solid #ddd;padding:6px;text-align:center;font-size:13px} th{background:#f3f4f6}
+    canvas{width:100%;height:360px;border:1px solid var(--border);border-radius:12px;background:#fff}
+    @media (max-width:640px){ .stu{flex:0 0 160px} } @media print{ .no-print{display:none!important} body{background:#fff} .card{border:0;box-shadow:none} @page{size:A4;margin:12mm} }
+    .status{font-size:12px;color:#64748b}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 로그인(항상 첫 화면) -->
+  <section id="login" class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2>🔐 반 선택 로그인</h2>
+      <div class="muted">A~F: a123~f123 · 관리자: admin123</div>
+    </div>
+    <div class="row" id="classGrid"></div>
+    <div id="pwArea" class="hide">
+      <div class="row"><input id="pw" type="password" placeholder="비밀번호 (예: a123)" /><button id="btnLogin" class="btn primary">로그인</button></div>
+      <div class="status" style="margin-top:6px">상태: <span id="syncStatus">초기화</span></div>
+    </div>
+  </section>
+
+  <!-- 본체 -->
+  <section id="app" class="card hide">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2>📘 감정데이터분석도구 — 실시간 동기화</h2>
+      <div class="row no-print"><div id="who" class="pill">-</div><div class="status"> · 서버버전 <span id="sv"></span> / 로컬버전 <span id="lv"></span></div><button id="btnLogout" class="btn">로그아웃</button></div>
+    </div>
+
+    <div class="tabs no-print" id="tabs">
+      <button class="tab active" data-tab="am">🏫 등교입력</button>
+      <button class="tab" data-tab="pm">🏡 하교입력</button>
+      <button class="tab" data-tab="data">📋 데이터 관리</button>
+      <button class="tab" data-tab="graph">📈 그래프보고서</button>
+      <button class="tab" data-tab="list">👥 학생목록</button>
+      <button class="tab" data-tab="new">➕ 학생등록</button>
+    </div>
+
+    <!-- AM -->
+    <div id="tab-am">
+      <div class="row" style="justify-content:center;gap:8px"><button class="btn" id="amPrev">◀</button><div class="pill" id="amDate"></div><button class="btn" id="amNext">▶</button></div>
+      <h3>학생 선택</h3><div id="amScroller" class="scroller"></div>
+      <div id="amForm" class="hide">
+        <h3 id="amWho" style="text-align:center"></h3>
+        <div class="emoList" id="amEmotions"></div>
+        <div id="amCtxWrap" class="hide"><div style="height:8px"></div><div class="muted" style="text-align:center">간편 맥락 (복수 선택)</div><div id="amCtx" class="context"></div></div>
+        <div class="row"><button class="btn primary" id="amSave">저장</button></div>
+      </div>
+    </div>
+
+    <!-- PM -->
+    <div id="tab-pm" class="hide">
+      <div class="row" style="justify-content:center;gap:8px"><button class="btn" id="pmPrev">◀</button><div class="pill" id="pmDate"></div><button class="btn" id="pmNext">▶</button></div>
+      <h3>학생 선택</h3><div id="pmScroller" class="scroller"></div>
+      <div id="pmForm" class="hide">
+        <h3 id="pmWho" style="text-align:center"></h3>
+        <div class="emoList" id="pmEmotions"></div>
+        <div id="pmCtxWrap" class="hide"><div style="height:8px"></div><div class="muted" style="text-align:center">간편 맥락 (복수 선택)</div><div id="pmCtx" class="context"></div></div>
+        <div class="row"><button class="btn primary" id="pmSave">저장</button></div>
+      </div>
+    </div>
+
+    <!-- Data -->
+    <div id="tab-data" class="hide">
+      <h3>모든 데이터 확인/수정/삭제</h3>
+      <table>
+        <thead><tr><th>날짜</th><th>학생</th><th>구분</th><th>점수</th><th>맥락</th><th>수정</th><th>삭제</th></tr></thead>
+        <tbody id="dataBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Graph & Report -->
+    <div id="tab-graph" class="hide">
+      <h3>학생별 선 그래프 및 자동 분석 보고서</h3>
+      <div class="row">
+        <select id="graphStudent"></select>
+        <input type="date" id="fromDate"><input type="date" id="toDate">
+        <button class="btn" id="btnGraph">그래프/보고서 생성</button>
+        <button class="btn" id="btnPrint">🖨️ 인쇄 / PDF</button>
+      </div>
+      <div style="height:8px"></div>
+      <h3 id="graphTitle" style="text-align:center"></h3>
+      <canvas id="chart"></canvas>
+      <div class="muted" style="font-size:12px;margin-top:6px;text-align:center">
+        <b>범례:</b> <span style="color:#ef4444">● 빨간 원=등교(AM)</span> · <span style="color:#3b82f6">▲ 파란 세모=하교(PM)</span> · 점 위 숫자는 점수
+      </div>
+      <div style="height:14px"></div>
+      <h3>자동 분석 보고서</h3>
+      <div id="reportBox" class="card" style="border-radius:16px"></div>
+    </div>
+
+    <!-- List -->
+    <div id="tab-list" class="hide"><h3>학생 목록</h3><div id="stuList"></div></div>
+
+    <!-- New -->
+    <div id="tab-new" class="hide">
+      <h3>학생 등록</h3>
+      <div class="row"><input id="photo" type="file" accept="image/*" class="no-print"><input id="newName" type="text" placeholder="학생 이름"><button class="btn" id="addStu">등록</button></div>
+      <div style="height:8px"></div>
+      <label>학급</label><div id="chipsClass" class="context"></div>
+      <label>성별</label><div id="chipsSex" class="context"></div>
+      <label>진단</label><div id="chipsDx" class="context"></div>
+      <label>의사소통</label><div id="chipsComm" class="context"></div>
+      <label>감각 프로필</label><div id="chipsSensory" class="context"></div>
+      <label>선호 강화제</label><div id="chipsReinf" class="context"></div>
+      <label>주요 유발상황</label><div id="chipsTrigger" class="context"></div>
+      <label>의료/약물</label><div id="chipsMeds" class="context"></div>
+      <div class="row"><input id="newParent" type="tel" placeholder="보호자 연락처"/></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ★ 여기 한 곳만 URL 붙여넣으면 끝
+  const SYNC_URL = "https://script.google.com/macros/s/AKfycbxQhB9al9XjSdumZ7KDwprPiLqnaYNgwIjRQMc9H0amTDHWhNuTiXyTP4BA-zAH0tRLhw/exec";
+
+  // keys & state
+  const KEY_ST="students_rt", KEY_ED="emotion_rt", KEY_SES="session_rt", KEY_VER="version_rt";
+  const PWD={A:"a123",B:"b123",C:"c123",D:"d123",E:"e123",F:"f123",admin:"admin123"};
+  let currentUser=null, students=[], emotion={}, localVersion=Number(localStorage.getItem(KEY_VER)||0), serverVersion=0, pollTimer=null, pushing=false;
+
+  // helpers
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  const fmt=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().split("T")[0];
+  const clamp=n=>Math.max(1,Math.min(5,n|0));
+  const setText=(sel,txt)=>{ const el=$(sel); if(el) el.textContent=txt; };
+
+  // UI data
+  const EMO={5:{emoji:"😄",name:"행복",scale:"자발적 미소·긍정 언어, 도움 없이 과제 참여 ≥90%, 문제행동 0회"},
+            4:{emoji:"🙂",name:"좋음",scale:"지시 따름 80% 내외, 가벼운 도움, 문제행동 0–1회·짧음"},
+            3:{emoji:"😐",name:"보통",scale:"중립 표정, 참여 변동, 지시 따름 60–80%"},
+            2:{emoji:"😔",name:"불편/슬픔",scale:"회피·한숨·느린 반응, 지시 따름 40–60%, 지원 필요"},
+            1:{emoji:"😭",name:"격앙/괴로움",scale:"울음/고함·강한 불편, 지시 따름 <40%, 즉각 중재 필요"}};
+  const CTX=["😴 수면부족","💊 건강저하","🏠 가정이슈","🔄 활동전환","🧒 또래갈등","👀 관심요구","🎁 강화제요구","🚪 과제회피","🌀 감각추구","🔊 소음민감","🍽️ 배고픔","🤕 통증/불편","📅 일정변경","🚌 등하교피로","🌤️ 날씨영향"];
+  const OPS={classes:["A","B","C","D","E","F"],sex:["남","여"],dx:["지적장애","자폐스펙트럼","ADHD","학습장애","정서·행동장애","기타"],comm:["구어","PECS","AAC","제스처","제한적 언어","기타"],sensory:["청각 과민","시각 과민","촉각 과민","압박 선호","움직임 추구","기타"],reinf:["스티커","음식(스낵/음료)","활동(휴식·산책)","전자기기","사회적 칭찬","기타"],trigger:["과제 전환","소음","예기치 않은 일정 변경","또래 갈등","요구 거부","기타"],meds:["없음","항정신병제","항불안제","항경련제","기타"]};
+
+  // persistence + realtime
+  function persist(){
+    localStorage.setItem(KEY_ST,JSON.stringify(students));
+    localStorage.setItem(KEY_ED,JSON.stringify(emotion));
+    localStorage.setItem(KEY_VER,String(localVersion));
+    buildDataManager();
+    schedulePush();
+  }
+
+  // Realtime engine
+  function schedulePush(){
+    if(pushing) return;
+    pushing=true;
+    // push soon to batch rapid edits
+    setTimeout(async ()=>{
+      try{
+        await pushServer();
+      }finally{
+        pushing=false;
+      }
+    }, 300);
+  }
+  async function fetchJSON(url, opts){ const r=await fetch(url, opts||{}); if(!r.ok) throw new Error(String(r.status)); return r.json(); }
+  async function getServerVersion(){ if(!SYNC_URL) return 0; try{ const j=await fetchJSON(SYNC_URL+"?action=version"); return Number(j.version||0);}catch(e){ return serverVersion; } }
+  async function pullServerFull(){
+    if(!SYNC_URL) return;
+    try{
+      const j=await fetchJSON(SYNC_URL+"?action=export");
+      if(j.students && j.emotion){
+        students=j.students; emotion=j.emotion; serverVersion=Number(j.version||0); localVersion=serverVersion;
+        localStorage.setItem(KEY_VER,String(localVersion));
+        localStorage.setItem(KEY_ST,JSON.stringify(students));
+        localStorage.setItem(KEY_ED,JSON.stringify(emotion));
+        buildAll(); updateVersionUI();
+      }
+    }catch(e){ /* ignore to keep UI responsive */ }
+  }
+  async function pushServer(){
+    if(!SYNC_URL) return;
+    const payload={action:"push",version:localVersion,students,emotion};
+    try{
+      const r=await fetch(SYNC_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      const j=await r.json();
+      if(j.ok){
+        serverVersion=Number(j.version||serverVersion+1);
+        localVersion=serverVersion;
+        updateVersionUI();
+      }
+    }catch(e){ /* keep retry on next change */ }
+  }
+  function startPolling(){
+    stopPolling();
+    pollTimer=setInterval(async ()=>{
+      const sv=await getServerVersion();
+      if(sv>localVersion){ await pullServerFull(); }
+    }, 5000);
+  }
+  function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
+  function updateVersionUI(){ setText("#sv", String(serverVersion)); setText("#lv", String(localVersion)); }
+
+  // login
+  function buildClassButtons(){
+    const g=$("#classGrid"); ["A","B","C","D","E","F","admin"].forEach(k=>{
+      const b=document.createElement("button"); b.className="btn"; b.textContent=(k==="admin"?"🔑 관리자":"학급 "+k);
+      b.onclick=()=>{ currentUser=k; $("#pwArea").classList.remove("hide"); setTimeout(()=>$("#pw").focus(),30); };
+      g.appendChild(b);
+    });
+  }
+  function login(){
+    const val=$("#pw").value.trim();
+    if(!currentUser) return setText("#syncStatus","학급 선택");
+    if(val===PWD[currentUser]){
+      localStorage.setItem(KEY_SES,JSON.stringify({user:currentUser,t:Date.now()}));
+      $("#login").classList.add("hide"); $("#app").classList.remove("hide");
+      setText("#who", currentUser==="admin"?"관리자":currentUser+"학급");
+      pullServerFull().then(()=>startPolling());
+    } else setText("#syncStatus","비밀번호 오류");
+  }
+  function logout(){ localStorage.removeItem(KEY_SES); stopPolling(); location.reload(); }
+
+  // chips
+  function chipContainer(id,ops,single=false){
+    const el=$(id); el.innerHTML=ops.map(v=>`<div class="chip" data-v="${v}">${v}</div>`).join("");
+    el.onclick=e=>{ const c=e.target.closest(".chip"); if(!c) return; if(single){ $$(id+" .chip").forEach(x=>x.classList.remove("selected")); c.classList.add("selected"); } else c.classList.toggle("selected"); };
+  }
+  const getChips=id=>$$(id+" .chip.selected").map(x=>x.dataset.v);
+
+  // students
+  function buildStuList(){
+    const list=currentUser==="admin"?students:students.filter(s=>(s.classes||[]).includes(currentUser));
+    $("#stuList").innerHTML = list.map(s=>`
+      <div class="row" style="justify-content:space-between;border-bottom:1px solid #e5e7eb;padding:8px 0">
+        <div class="row"><img class="avatar" src="${s.photo||""}"><div><div><b>${s.name}</b> <span class="muted">(${(s.classes||[]).join(", ")})</span></div>
+        <div class="muted" style="font-size:12px">${(s.dx||[]).join("/")} · ${(s.comm||[]).join("/")} · ${(s.sensory||[]).join("/")}</div></div></div>
+        <button class="btn danger" data-del="${s.id}">삭제</button></div>`).join("") || `<div class="muted">학생 없음</div>`;
+    $("#stuList").onclick = (e)=>{ const b=e.target.closest("button[data-del]"); if(!b) return; const id=b.dataset.del; students=students.filter(s=>s.id!=id); persist(); buildStuList(); buildStudents("#amScroller","am"); buildStudents("#pmScroller","pm"); buildGraphStudentSelect(); };
+  }
+  const imgToDataURL=file=>new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(file); });
+  async function addStu(){
+    const name=$("#newName").value.trim(); if(!name) return;
+    let photo=null; const f=$("#photo").files[0]; if(f) photo=await imgToDataURL(f);
+    const s={id:Date.now(),name,photo,classes:getChips("#chipsClass"),sex:getChips("#chipsSex")[0]||"",dx:getChips("#chipsDx"),comm:getChips("#chipsComm"),sensory:getChips("#chipsSensory"),reinf:getChips("#chipsReinf"),trigger:getChips("#chipsTrigger"),meds:getChips("#chipsMeds"),parent:$("#newParent").value.trim()};
+    students.push(s);
+    ["#chipsClass","#chipsSex","#chipsDx","#chipsComm","#chipsSensory","#chipsReinf","#chipsTrigger","#chipsMeds"].forEach(id=>$$(id+" .chip").forEach(c=>c.classList.remove("selected")));
+    $("#newName").value=""; $("#newParent").value=""; $("#photo").value="";
+    persist(); buildStuList(); buildStudents("#amScroller","am"); buildStudents("#pmScroller","pm"); buildGraphStudentSelect();
+  }
+  function buildStudents(container,prefix){
+    const all=currentUser==="admin"?students:students.filter(s=>(s.classes||[]).includes(currentUser));
+    const el=$(container);
+    el.innerHTML = all.map(s=>`
+      <div class="stu" data-id="${s.id}"><img class="avatar" src="${s.photo||""}"><div style="font-weight:800;margin-top:6px">${s.name}</div><div class="muted" style="font-size:12px">${(s.classes||[])[0]||""}</div></div>`).join("") || `<div class="muted">학생 없음</div>`;
+    el.onclick = (e)=>{ const card=e.target.closest(".stu"); if(!card) return; $$(container+" .stu").forEach(x=>x.classList.remove("selected")); card.classList.add("selected"); const sid=card.dataset.id; const nm=(students.find(x=>x.id==sid)||{}).name||""; (prefix==="am"?$("#amForm"):$("#pmForm")).classList.remove("hide"); (prefix==="am"?$("#amWho"):$("#pmWho")).textContent = `${nm} 학생의 감정`; el.dataset.sel=sid; };
+  }
+
+  // emotion input
+  function buildEmo(prefix){
+    const box= prefix==="am" ? $("#amEmotions") : $("#pmEmotions");
+    box.innerHTML = [5,4,3,2,1].map(sc=>`
+      <div class="emoBtn" data-score="${sc}"><div class="emoEmoji">${EMO[sc].emoji}</div>
+        <div><div class="emoTitle">${sc}점 (${EMO[sc].name})</div><div class="emoScale">${EMO[sc].scale} · 누구나 관찰 가능</div></div>
+      </div>`).join("");
+    box.onclick = (e)=>{ const b=e.target.closest(".emoBtn"); if(!b) return; $$("#"+(prefix==="am"?"amEmotions":"pmEmotions")+" .emoBtn").forEach(x=>x.classList.remove("active")); b.classList.add("active"); box.dataset.score=b.dataset.score; (prefix==="am"?$("#amCtxWrap"):$("#pmCtxWrap")).classList.remove("hide"); };
+  }
+  function buildCtx(container){ const el=$(container); el.innerHTML = CTX.map(t=>`<div class="chip" data-k="${t}">${t}</div>`).join(""); el.onclick = (e)=>{ const c=e.target.closest(".chip"); if(!c) return; c.classList.toggle("selected"); }; }
+
+  // dates
+  let amDate=new Date(), pmDate=new Date();
+  const dateK=d=>d.toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+  function setDates(){ $("#amDate").textContent=dateK(amDate); $("#pmDate").textContent=dateK(pmDate); }
+
+  function save(prefix){
+    const scroller = prefix==="am" ? $("#amScroller") : $("#pmScroller"); const sid=scroller.dataset.sel;
+    const score = parseInt((prefix==="am"?$("#amEmotions"):$("#pmEmotions")).dataset.score||"0",10);
+    if(!sid || !score) return;
+    const date = fmt(prefix==="am"?amDate:pmDate);
+    emotion[date]=emotion[date]||{};
+    const stu=students.find(s=>s.id==sid);
+    if(!emotion[date][sid]) emotion[date][sid]={name:stu?.name||""};
+    const ctx=$$(prefix==="am"?"#amCtx .chip.selected":"#pmCtx .chip.selected").map(x=>x.dataset.k);
+    emotion[date][sid][prefix==="am"?"morning":"afternoon"]={score:clamp(score),context:ctx};
+    localVersion++; persist(); // push scheduled
+    // reset UI
+    $$(prefix==="am"?"#amEmotions .emoBtn":"#pmEmotions .emoBtn").forEach(x=>x.classList.remove("active"));
+    (prefix==="am"?$("#amCtxWrap"):$("#pmCtxWrap")).classList.add("hide");
+    $$(prefix==="am"?"#amCtx .chip":"#pmCtx .chip").forEach(x=>x.classList.remove("selected"));
+  }
+
+  // data manager
+  function buildDataManager(){
+    const body=$("#dataBody"); body.innerHTML="";
+    const dates=Object.keys(emotion).sort();
+    dates.forEach(k=>{
+      const day=emotion[k];
+      Object.keys(day).forEach(sid=>{
+        const rec=day[sid];
+        ["morning","afternoon"].forEach(slot=>{
+          const cur=rec[slot]; if(!cur) return;
+          const tr=document.createElement("tr");
+          tr.innerHTML = `<td>${k}</td><td>${rec.name}</td><td>${slot==="morning"?"등교":"하교"}</td>
+            <td><input type="number" min="1" max="5" value="${cur.score}" style="width:70px"/></td>
+            <td><input type="text" value="${(cur.context||[]).join(", ")}" placeholder="쉼표 구분"/></td>
+            <td><button class="btn" data-act="save">수정</button></td>
+            <td><button class="btn danger" data-act="del">삭제</button></td>`;
+          tr.dataset.date=k; tr.dataset.sid=sid; tr.dataset.slot=slot; body.appendChild(tr);
+        });
+      });
+    });
+    body.onclick=(e)=>{
+      const btn=e.target.closest("button"); if(!btn) return;
+      const tr=btn.closest("tr"); const d=tr.dataset.date, sid=tr.dataset.sid, slot=tr.dataset.slot;
+      if(btn.dataset.act==="save"){
+        const score=parseInt(tr.querySelector('input[type="number"]').value||"0",10);
+        const ctx=tr.querySelector('input[type="text"]').value.split(",").map(s=>s.trim()).filter(Boolean);
+        if(!score) return alert("점수 1~5 입력");
+        emotion[d][sid][slot]={score:clamp(score),context:ctx}; localVersion++; persist();
+      } else {
+        if(!confirm("삭제할까요?")) return;
+        delete emotion[d][sid][slot];
+        if(!emotion[d][sid].morning && !emotion[d][sid].afternoon) delete emotion[d][sid];
+        if(Object.keys(emotion[d]).length===0) delete emotion[d];
+        localVersion++; persist(); tr.remove();
+      }
+    };
+  }
+
+  // graphs
+  function buildGraphStudentSelect(){
+    const sel=$("#graphStudent"); const list=currentUser==="admin"?students:students.filter(s=>(s.classes||[]).includes(currentUser));
+    sel.innerHTML = `<option value="">학생 선택</option>` + list.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+  }
+  function getRangeData(studentId,from,to){
+    const labels=[], am=[], pm=[]; const fromD=new Date(from), toD=new Date(to); if(isNaN(fromD)||isNaN(toD)) return {labels,am,pm};
+    const cur=new Date(fromD);
+    while(cur<=toD){ const k=fmt(cur), r=emotion[k]?.[studentId]; labels.push(k.slice(5)); am.push(r?.morning?.score ?? null); pm.push(r?.afternoon?.score ?? null); cur.setDate(cur.getDate()+1); }
+    return {labels, am, pm};
+  }
+  function drawGraphTitle(name){ $("#graphTitle").textContent = name ? `${name} 학생 감정 모니터링 그래프` : ""; }
+  function drawChart(canvasId, labels, am, pm){
+    const c=document.getElementById(canvasId), ctx=c.getContext('2d');
+    const dpr=window.devicePixelRatio||1; c.width=c.clientWidth*dpr; c.height=c.clientHeight*dpr; ctx.scale(dpr,dpr);
+    ctx.clearRect(0,0,c.clientWidth,c.clientHeight);
+    const W=c.clientWidth,H=c.clientHeight,pad=42;
+    ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.moveTo(pad,pad); ctx.lineTo(pad,H-pad); ctx.stroke();
+    for(let s=1;s<=5;s++){ const y=H-pad-(H-2*pad)*(s-1)/4; ctx.fillStyle="#64748b"; ctx.font="12px sans-serif"; ctx.fillText(String(s), 10, y+4); ctx.strokeStyle="#f1f5f9"; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke(); }
+    if(!labels.length) return;
+    const step=(W-2*pad)/Math.max(1,labels.length-1); const yOf=v=>H-pad-(H-2*pad)*((v-1)/4);
+    labels.forEach((lab,i)=>{ const x=pad+i*step; if(i%Math.ceil(labels.length/8)===0){ ctx.fillStyle="#64748b"; ctx.fillText(lab, x-12, H-pad+14); } });
+    ctx.fillStyle="#ef4444"; am.forEach((v,i)=>{ if(v==null) return; const x=pad+i*step, y=yOf(v); ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill(); ctx.font="11px sans-serif"; ctx.fillText(String(v), x+6, y-6); });
+    ctx.fillStyle="#3b82f6"; pm.forEach((v,i)=>{ if(v==null) return; const x=pad+i*step, y=yOf(v); ctx.beginPath(); ctx.moveTo(x, y-5); ctx.lineTo(x-5, y+4); ctx.lineTo(x+5, y+4); ctx.closePath(); ctx.fill(); ctx.font="11px sans-serif"; ctx.fillText(String(v), x+6, y-6); });
+  }
+  function handleGraph(){
+    const sid=$("#graphStudent").value, from=$("#fromDate").value, to=$("#toDate").value; if(!sid||!from||!to) return alert("학생과 기간을 선택하세요.");
+    const s = students.find(x=>x.id==sid);
+    drawGraphTitle(s?.name||"");
+    const g = getRangeData(sid,from,to); drawChart("chart",g.labels,g.am,g.pm); genReport(sid,from,to);
+  }
+  function genReport(studentId, from, to){
+    const s = students.find(x=>x.id==studentId); if(!s){ $("#reportBox").innerHTML="학생 정보가 없습니다."; return; }
+    const cur=new Date(from), end=new Date(to); const recs=[];
+    while(cur<=end){ const k=fmt(cur); const r=emotion[k]?.[studentId]; if(r?.morning) recs.push({date:k,slot:"AM",score:r.morning.score,ctx:r.morning.context||[]}); if(r?.afternoon) recs.push({date:k,slot:"PM",score:r.afternoon.score,ctx:r.afternoon.context||[]}); cur.setDate(cur.getDate()+1); }
+    const n=recs.length, avg=a=>a.length? (a.reduce((x,y)=>x+y,0)/a.length).toFixed(2):"-", amScores=recs.filter(r=>r.slot==="AM").map(r=>r.score), pmScores=recs.filter(r=>r.slot==="PM").map(r=>r.score);
+    const lowDays = recs.filter(r=>r.score<=2).length, ctxCount={}; recs.forEach(r=>r.ctx.forEach(c=>ctxCount[c]=(ctxCount[c]||0)+1));
+    const topCtx = Object.entries(ctxCount).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`${k}(${v})`);
+    const parts = [`<b>기본 정보</b>: 학급 ${(s.classes||[]).join("/")||"미등록"}, 진단 ${(s.dx||[]).join(", ")||"미등록"}, 의사소통 ${(s.comm||[]).join(", ")||"미등록"}, 감각 ${(s.sensory||[]).join(", ")||"미등록"}`];
+    const lines = [`<b>요약</b>: 표본 ${n}개, AM 평균 ${avg(amScores)}, PM 평균 ${avg(pmScores)}, 저조(≤2) ${lowDays}회.`]; if(topCtx.length) lines.push(`<b>주요 맥락</b>: ${topCtx.join(", ")}.`);
+    const rec=[]; if((avg(amScores)!=="-" && parseFloat(avg(amScores))<=3) || (avg(pmScores)!=="-" && parseFloat(avg(pmScores))<=3)) rec.push("SEL·Zones: 감정 레이블링·대처 카드");
+    rec.push("ABA/TEACCH/PECS·AAC/감각통합/CBT·DBT/CPI 협업 루틴 권장");
+    $("#reportBox").innerHTML = `<div>${parts.join("<br>")}</div><div style="height:8px"></div><div>${lines.join("<br>")}</div><div style="height:8px"></div><b>권장 중재/교육 방법</b><ul>${rec.map(r=>`<li>${r}</li>`).join("")}</ul>`;
+  }
+
+  // initial build
+  function buildAll(){
+    buildStuList(); buildStudents("#amScroller","am"); buildStudents("#pmScroller","pm");
+    buildEmo("am"); buildEmo("pm"); buildCtx("#amCtx"); buildCtx("#pmCtx"); buildDataManager(); buildGraphStudentSelect();
+    const past=new Date(); past.setDate(past.getDate()-14); $("#fromDate").value=fmt(past); $("#toDate").value=fmt(new Date()); setDates();
+  }
+
+  // wire events
+  document.addEventListener("DOMContentLoaded", ()=>{
+    try{ students=JSON.parse(localStorage.getItem(KEY_ST)||"[]"); emotion=JSON.parse(localStorage.getItem(KEY_ED)||"{}"); }catch{ students=[]; emotion={}; }
+    if(students.length===0){ students=["김민준","이서준","박도윤","최시우"].map((n,i)=>({id:Date.now()+i,name:n,classes:["A"]})); }
+    buildClassButtons(); $("#btnLogin").onclick=login; $("#pw").addEventListener("keydown",e=>{ if(e.key==="Enter") login(); }); $("#btnLogout").onclick=logout;
+    $("#tabs").onclick=(e)=>{ const b=e.target.closest("button.tab"); if(!b)return; const tab=b.dataset.tab; $$(".tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab)); ["am","pm","data","graph","list","new"].forEach(id=>$("#tab-"+id).classList.toggle("hide", id!==tab)); if(tab==="data") buildDataManager(); if(tab==="graph") buildGraphStudentSelect(); if(tab==="list") buildStuList(); };
+    $("#amPrev").onclick=()=>{ amDate.setDate(amDate.getDate()-1); setDates(); };
+    $("#amNext").onclick=()=>{ amDate.setDate(amDate.getDate()+1); setDates(); };
+    $("#pmPrev").onclick=()=>{ pmDate.setDate(pmDate.getDate()-1); setDates(); };
+    $("#pmNext").onclick=()=>{ pmDate.setDate(pmDate.getDate()+1); setDates(); };
+    $("#amSave").onclick=()=>save("am"); $("#pmSave").onclick=()=>save("pm");
+    chipContainer("#chipsClass",OPS.classes); chipContainer("#chipsSex",OPS.sex,true); chipContainer("#chipsDx",OPS.dx); chipContainer("#chipsComm",OPS.comm); chipContainer("#chipsSensory",OPS.sensory); chipContainer("#chipsReinf",OPS.reinf); chipContainer("#chipsTrigger",OPS.trigger); chipContainer("#chipsMeds",OPS.meds);
+    $("#addStu").onclick=addStu; $("#btnGraph").onclick=handleGraph; $("#btnPrint").onclick=()=>window.print();
+    // storage events (multi-tab realtime)
+    window.addEventListener("storage", (e)=>{ if(e.key===KEY_ST||e.key===KEY_ED||e.key===KEY_VER){ try{ students=JSON.parse(localStorage.getItem(KEY_ST)||"[]"); emotion=JSON.parse(localStorage.getItem(KEY_ED)||"{}"); localVersion=Number(localStorage.getItem(KEY_VER)||0); buildAll(); updateVersionUI(); }catch{} } });
+    updateVersionUI();
+  });
+})();
+</script>
+</body>
+</html>
