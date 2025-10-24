@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>경은데이터분석 PLUS</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<style>
+:root{--primary:#4c5fd5;--accent:#0ea5e9;}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif;margin:0;background:#f7f7fb;color:#0f172a}
+header{background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;padding:18px 20px}
+header h1{margin:0;font-size:20px}
+nav.tabs{display:flex;gap:8px;background:#fff;padding:8px 8px 0;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:10}
+nav .tab{padding:10px 14px;border:1px solid #e5e7eb;border-bottom:none;border-top-left-radius:12px;border-top-right-radius:12px;background:#f9fafb;cursor:pointer;font-size:14px}
+nav .tab.active{background:#fff;font-weight:600;color:#111827}
+section.tabpanel{display:none;padding:16px}
+section.tabpanel.active{display:block}
+.container{max-width:1400px;margin:14px auto;background:#fff;border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.08);overflow:hidden}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+select,button{padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;font-size:14px}
+label{font-weight:600}
+.canvas-wrap{position:relative;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:10px}
+.note{font-size:12px;color:#475569;margin-top:8px}
+/* Zoom overlay for THIS parent page */
+.zoom-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:9999}
+.zoom-box{background:#fff;padding:8px;border-radius:12px;max-width:96vw;max-height:92vh;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.zoom-box img{display:block;max-width:95vw;max-height:90vh}
+.zoom-close{position:absolute;top:14px;right:20px;font-size:28px;color:#fff;cursor:pointer}
+footer{text-align:center;color:#64748b;font-size:12px;padding:16px 0}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+</head>
+<body>
+<header>
+  <h1>경은데이터분석 PLUS</h1>
+</header>
+
+<div class="container">
+  <nav class="tabs">
+    <div class="tab active" data-for="legacy">기존 대시보드</div>
+    <div class="tab" data-for="studentChart">학생별 위기행동 발생빈도 그래프</div>
+  </nav>
+
+  <section id="legacy" class="tabpanel active">
+    <div style="height:78vh">
+      <iframe id="legacyFrame" title="경은데이터분석(원본)" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;ko&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot; /&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;/&gt;
+  &lt;title&gt;PBS 통합 분석 대시보드 v3.5-enhanced&lt;/title&gt;
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js&quot;&gt;&lt;/script&gt;
+  &lt;style&gt;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 20px;
+      font-family: &#x27;Malgun Gothic&#x27;, &#x27;맑은 고딕&#x27;, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh; color: #222;
+    }
+    .container { max-width: 1600px; margin: 0 auto; }
+    .panel {
+      background: #fff; border-radius: 14px; padding: 20px; margin-bottom: 20px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    }
+    h1 { margin: 0 0 8px; }
+    .muted { color: #666; font-size: 14px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .col { flex: 1; min-width: 220px; }
+    label { display:block; font-weight:700; color:#444; margin: 6px 0; }
+    input, select, textarea, button {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 2px solid #E6E8EE;
+      font-size:14px; background:#fff;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color:#667eea; }
+    button { cursor: pointer; background:#667eea; color:#fff; font-weight:700; transition: .2s; }
+    button:hover { transform: translateY(-1px); background:#5a67d8; }
+    .btn-ghost { background: #fff; color:#667eea; border-color:#667eea; }
+    .btn-ghost:hover { background:#EEF0FF; }
+    .actions { display:flex; gap:8px; }
+    .hidden { display: none !important; }
+    .grid { display: grid; gap: 16px; }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .stat {
+      background:#f7f9ff; padding:18px; border:1px solid #E6E8EE; border-radius:12px;
+    }
+    .stat .value { font-size: 34px; font-weight: 800; color:#3f51b5; }
+    .stat .label { color:#666; font-size: 12px; margin-top:4px; }
+    .tabs { display:flex; gap:6px; border-bottom:2px solid #E6E8EE; margin-bottom: 16px; }
+    .tab { background:transparent; color:#666; border:none; padding:10px 14px; font-weight:800; }
+    .tab.active { color:#3f51b5; border-bottom: 3px solid #3f51b5; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .chart-container { position:relative; height:320px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700; }
+    .tier1 { background:#C6F6D5; color:#22543d; }
+    .tier2 { background:#FED7AA; color:#7c2d12; }
+    .tier3 { background:#FED7D7; color:#742a2a; }
+    .student-card { border:1px solid #E6E8EE; border-radius:12px; padding:12px; background:#FAFBFF; margin-bottom:10px; }
+    .student-card a { color:#3f51b5; font-weight:800; text-decoration:none; }
+    .rec { background:#FFF7E6; border-left:4px solid #ff9800; padding:12px; border-radius:8px; margin:10px 0; }
+    .small { font-size:12px; color:#666; }
+    .footer { text-align:center; color:#fff; font-size:12px; margin-top: 10px; }
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; padding: 20px; z-index: 1000; }
+    .modal .dialog { background:#fff; border-radius:16px; width:min(1200px, 95vw); max-height: 90vh; overflow:auto; padding: 20px; }
+    .modal h3 { margin-top:0; }
+    .table { width:100%; border-collapse: collapse; }
+    .table th, .table td { border:1px solid #E6E8EE; padding:8px 10px; font-size:13px; }
+    .link-row { display:flex; gap:8px; flex-wrap: wrap; margin-top: 8px; }
+    .analysis-section { background:#f0f4ff; padding:16px; border-radius:10px; margin:12px 0; }
+    .insight-box { background:#e8f5e9; padding:12px; border-radius:8px; margin:8px 0; }
+    @media print {
+      body { background: white; }
+      .panel { box-shadow: none; border: 1px solid #ddd; }
+      .chart-container { page-break-inside: avoid; }
+      .actions, .btn-ghost, button { display: none !important; }
+    }
+  &lt;/style&gt;
+
+&lt;style&gt;
+.ke-zoom-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:99999}
+.ke-zoom-box{background:white;padding:8px;border-radius:12px;max-width:96vw;max-height:92vh;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.ke-zoom-box img{display:block;max-width:95vw;max-height:90vh;height:auto;width:auto}
+.ke-zoom-close{position:absolute;top:14px;right:20px;font-size:28px;color:#fff;cursor:pointer}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class=&quot;container&quot;&gt;
+    &lt;div class=&quot;panel&quot;&gt;
+      &lt;h1&gt;🎯 PBS 통합 분석 대시보드 v3.5-enhanced&lt;/h1&gt;
+      &lt;p class=&quot;muted&quot;&gt;CSV 업로드/붙여넣기 → 필드 매핑 → 기간 설정 → 분석 시작. 집중 기간 내 &#x27;최초 임계 도달(Threshold crossing)&#x27; 학생에 🔔.&lt;/p&gt;
+      &lt;div class=&quot;row&quot;&gt;
+        &lt;div class=&quot;col&quot;&gt;
+          &lt;label&gt;전체 학생 수 (Total students)&lt;/label&gt;
+          &lt;input id=&quot;totalStudents&quot; type=&quot;number&quot; value=&quot;100&quot; placeholder=&quot;예: 100&quot;/&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;col&quot;&gt;
+          &lt;label&gt;데이터 소스 (Data source)&lt;/label&gt;
+          &lt;div class=&quot;actions&quot;&gt;
+            &lt;button onclick=&quot;loadSample()&quot;&gt;📊 샘플 데이터&lt;/button&gt;
+            &lt;button class=&quot;btn-ghost&quot; onclick=&quot;document.getElementById(&#x27;fileInput&#x27;).click()&quot;&gt;📁 파일&lt;/button&gt;
+            &lt;button class=&quot;btn-ghost&quot; onclick=&quot;togglePaste()&quot;&gt;📋 붙여넣기&lt;/button&gt;
+          &lt;/div&gt;
+          &lt;input id=&quot;fileInput&quot; type=&quot;file&quot; accept=&quot;.csv,.tsv&quot; class=&quot;hidden&quot;/&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;pastePanel&quot; class=&quot;row hidden&quot; style=&quot;margin-top:10px;&quot;&gt;
+        &lt;div class=&quot;col&quot;&gt;
+          &lt;textarea id=&quot;pasteData&quot; rows=&quot;6&quot; placeholder=&quot;여기에 CSV를 그대로 붙여넣으세요. (헤더 포함)&quot;&gt;&lt;/textarea&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;col&quot; style=&quot;max-width:220px;&quot;&gt;
+          &lt;button onclick=&quot;parsePaste()&quot;&gt;파싱(Parse)&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;status&quot; class=&quot;muted&quot; style=&quot;margin-top:8px;&quot;&gt;상태: 대기&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div id=&quot;mapPanel&quot; class=&quot;panel hidden&quot;&gt;
+      &lt;h2&gt;🗂️ 데이터 매핑 (Field Mapping)&lt;/h2&gt;
+      &lt;div class=&quot;grid grid-3&quot;&gt;
+        &lt;div&gt;&lt;label&gt;날짜(Date)*&lt;/label&gt;&lt;select id=&quot;mapDate&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;label&gt;시간대/시간(Time or Block)*&lt;/label&gt;&lt;select id=&quot;mapTime&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;label&gt;요일(Weekday)&lt;/label&gt;&lt;select id=&quot;mapDow&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;label&gt;학생(Student)*&lt;/label&gt;&lt;select id=&quot;mapStudent&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;label&gt;행동(Behavior)*&lt;/label&gt;&lt;select id=&quot;mapBehavior&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;label&gt;강도(Intensity 1-5)*&lt;/label&gt;&lt;select id=&quot;mapIntensity&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;label&gt;기능(Function)&lt;/label&gt;&lt;select id=&quot;mapFunction&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;label&gt;장소(Setting)&lt;/label&gt;&lt;select id=&quot;mapSetting&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;label&gt;선행사건(Antecedent)&lt;/label&gt;&lt;select id=&quot;mapAntecedent&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;label&gt;결과(Consequence)&lt;/label&gt;&lt;select id=&quot;mapConsequence&quot;&gt;&lt;/select&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;row&quot; style=&quot;margin-top:10px;&quot;&gt;
+        &lt;div class=&quot;col&quot;&gt;
+          &lt;label&gt;전체 분석 기간 (Full range)&lt;/label&gt;
+          &lt;div class=&quot;row&quot; style=&quot;gap:6px;&quot;&gt;
+            &lt;input id=&quot;startDate&quot; type=&quot;date&quot; value=&quot;2025-01-01&quot;/&gt;
+            &lt;input id=&quot;endDate&quot; type=&quot;date&quot; value=&quot;2025-12-31&quot;/&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;col&quot;&gt;
+          &lt;label&gt;집중 분석 기간 (Focus window)&lt;/label&gt;
+          &lt;div class=&quot;row&quot; style=&quot;gap:6px;&quot;&gt;
+            &lt;input id=&quot;focusStart&quot; type=&quot;date&quot; value=&quot;2025-09-01&quot;/&gt;
+            &lt;input id=&quot;focusEnd&quot; type=&quot;date&quot; value=&quot;2025-09-30&quot;/&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;row&quot; style=&quot;margin-top:10px;&quot;&gt;
+        &lt;div class=&quot;col&quot;&gt;
+          &lt;label&gt;Tier2 임계값 (기본: 2회 이상)&lt;/label&gt;
+          &lt;input id=&quot;tier2Threshold&quot; type=&quot;number&quot; value=&quot;2&quot; min=&quot;1&quot;/&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;col&quot;&gt;
+          &lt;label&gt;Tier3 임계값 (기본: 4회 이상)&lt;/label&gt;
+          &lt;input id=&quot;tier3Threshold&quot; type=&quot;number&quot; value=&quot;4&quot; min=&quot;1&quot;/&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;col&quot; style=&quot;max-width:340px;&quot;&gt;
+          &lt;button id=&quot;btnAnalyze&quot; onclick=&quot;runAnalysis()&quot; disabled&gt;🚀 분석 시작(Analyze)&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div id=&quot;dashboard&quot; class=&quot;panel hidden&quot;&gt;
+      &lt;h2&gt;📊 분석 결과 (Results)&lt;/h2&gt;
+      &lt;div class=&quot;tabs&quot;&gt;
+        &lt;button class=&quot;tab active&quot; onclick=&quot;showTab(event,&#x27;overview&#x27;)&quot;&gt;전체 현황&lt;/button&gt;
+        &lt;button class=&quot;tab&quot; onclick=&quot;showTab(event,&#x27;detail&#x27;)&quot;&gt;상세 분석&lt;/button&gt;
+        &lt;button class=&quot;tab&quot; onclick=&quot;showTab(event,&#x27;tier2&#x27;)&quot;&gt;Tier 2 검토&lt;/button&gt;
+        &lt;button class=&quot;tab&quot; onclick=&quot;showTab(event,&#x27;tier3&#x27;)&quot;&gt;Tier 3 검토&lt;/button&gt;
+        &lt;button class=&quot;tab&quot; onclick=&quot;showTab(event,&#x27;patterns&#x27;)&quot;&gt;패턴 분석&lt;/button&gt;
+      &lt;/div&gt;
+
+      &lt;div id=&quot;overview&quot; class=&quot;tab-content active&quot;&gt;
+        &lt;div class=&quot;grid grid-3&quot;&gt;
+          &lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;value&quot; id=&quot;statTotalStudents&quot;&gt;0&lt;/div&gt;&lt;div class=&quot;label&quot;&gt;전체 학생 수&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;value&quot; id=&quot;statUniqueStudents&quot;&gt;0&lt;/div&gt;&lt;div class=&quot;label&quot;&gt;데이터가 있는 학생 수&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;value&quot; id=&quot;statIncidents&quot;&gt;0&lt;/div&gt;&lt;div class=&quot;label&quot;&gt;총 발생 건수&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;value&quot; id=&quot;statAvgIntensity&quot;&gt;0&lt;/div&gt;&lt;div class=&quot;label&quot;&gt;평균 강도&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;value&quot; id=&quot;statPeakDay&quot;&gt;-&lt;/div&gt;&lt;div class=&quot;label&quot;&gt;최다 발생일&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;stat&quot;&gt;&lt;div class=&quot;value&quot; id=&quot;statTrend&quot;&gt;-&lt;/div&gt;&lt;div class=&quot;label&quot;&gt;주간 추세&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;grid grid-4&quot; style=&quot;margin-top:14px;&quot;&gt;
+          &lt;div class=&quot;panel&quot;&gt;&lt;h3&gt;행동유형별 발생&lt;/h3&gt;&lt;div class=&quot;chart-container&quot;&gt;&lt;canvas id=&quot;byBehavior&quot;&gt;&lt;/canvas&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;panel&quot;&gt;&lt;h3&gt;요일별 발생&lt;/h3&gt;&lt;div class=&quot;chart-container&quot;&gt;&lt;canvas id=&quot;byWeekday&quot;&gt;&lt;/canvas&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;panel&quot;&gt;&lt;h3&gt;시간대별 발생&lt;/h3&gt;&lt;div class=&quot;chart-container&quot;&gt;&lt;canvas id=&quot;byTime&quot;&gt;&lt;/canvas&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;panel&quot;&gt;&lt;h3&gt;강도별 분포&lt;/h3&gt;&lt;div class=&quot;chart-container&quot;&gt;&lt;canvas id=&quot;byIntensity&quot;&gt;&lt;/canvas&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;panel&quot;&gt;&lt;h3&gt;일별 추이&lt;/h3&gt;&lt;div class=&quot;chart-container&quot;&gt;&lt;canvas id=&quot;byDate&quot;&gt;&lt;/canvas&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;panel&quot;&gt;&lt;h3&gt;기능별 분포&lt;/h3&gt;&lt;div class=&quot;chart-container&quot;&gt;&lt;canvas id=&quot;byFunction&quot;&gt;&lt;/canvas&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;panel&quot;&gt;&lt;h3&gt;장소별 발생&lt;/h3&gt;&lt;div class=&quot;chart-container&quot;&gt;&lt;canvas id=&quot;bySetting&quot;&gt;&lt;/canvas&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;panel&quot;&gt;&lt;h3&gt;주간 누적 추이&lt;/h3&gt;&lt;div class=&quot;chart-container&quot;&gt;&lt;canvas id=&quot;weeklyTrend&quot;&gt;&lt;/canvas&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div id=&quot;detail&quot; class=&quot;tab-content&quot;&gt;
+        &lt;h3&gt;BCBA Tier 1 권고(Universal Supports)&lt;/h3&gt;
+        &lt;div id=&quot;tier1Recs&quot; class=&quot;rec&quot;&gt;&lt;/div&gt;
+        
+        &lt;h3 style=&quot;margin-top:12px;&quot;&gt;예방적 중재 전략 (Preventive Interventions)&lt;/h3&gt;
+        &lt;div id=&quot;preventiveStrategies&quot; class=&quot;analysis-section&quot;&gt;&lt;/div&gt;
+        
+        &lt;h3 style=&quot;margin-top:12px;&quot;&gt;환경 수정 권고 (Environmental Modifications)&lt;/h3&gt;
+        &lt;div id=&quot;environmentRecs&quot; class=&quot;analysis-section&quot;&gt;&lt;/div&gt;
+        
+        &lt;div class=&quot;panel&quot;&gt;
+          &lt;h3&gt;학생별 상세 분석 (클릭 시 개별 FBA)&lt;/h3&gt;
+          &lt;div id=&quot;studentList&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div id=&quot;tier2&quot; class=&quot;tab-content&quot;&gt;
+        &lt;div class=&quot;panel&quot;&gt;
+          &lt;h3&gt;Tier 2 대상 학생 (집중 기간 최초 임계 도달 🔔 표시)&lt;/h3&gt;
+          &lt;div id=&quot;tier2Content&quot;&gt;&lt;/div&gt;
+          &lt;h3 style=&quot;margin-top:16px;&quot;&gt;Tier 2 그룹 중재 권고&lt;/h3&gt;
+          &lt;div id=&quot;tier2GroupRecs&quot; class=&quot;analysis-section&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div id=&quot;tier3&quot; class=&quot;tab-content&quot;&gt;
+        &lt;div class=&quot;panel&quot;&gt;
+          &lt;h3&gt;Tier 3 대상 학생 (집중 기간 최초 임계 도달 🔔 표시)&lt;/h3&gt;
+          &lt;div id=&quot;tier3Content&quot;&gt;&lt;/div&gt;
+          &lt;h3 style=&quot;margin-top:16px;&quot;&gt;Tier 3 개별화 중재 권고&lt;/h3&gt;
+          &lt;div id=&quot;tier3IndividualRecs&quot; class=&quot;analysis-section&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div id=&quot;patterns&quot; class=&quot;tab-content&quot;&gt;
+        &lt;div class=&quot;panel&quot;&gt;
+          &lt;h3&gt;행동 패턴 분석 (Behavioral Pattern Analysis)&lt;/h3&gt;
+          &lt;div id=&quot;patternAnalysis&quot; class=&quot;analysis-section&quot;&gt;&lt;/div&gt;
+          &lt;h3 style=&quot;margin-top:16px;&quot;&gt;시간대별 위험도 매트릭스&lt;/h3&gt;
+          &lt;div id=&quot;riskMatrix&quot; class=&quot;analysis-section&quot;&gt;&lt;/div&gt;
+          &lt;h3 style=&quot;margin-top:16px;&quot;&gt;상관관계 분석&lt;/h3&gt;
+          &lt;div id=&quot;correlationAnalysis&quot; class=&quot;analysis-section&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;footer&quot;&gt;© 2025 PBS Dashboard • v3.5-enhanced • Keung-eun PBS System&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div id=&quot;modal&quot; class=&quot;modal&quot; onclick=&quot;closeModal(event)&quot;&gt;
+    &lt;div class=&quot;dialog&quot; onclick=&quot;event.stopPropagation()&quot;&gt;
+      &lt;div style=&quot;display:flex; justify-content:space-between; align-items:center;&quot;&gt;
+        &lt;h3 id=&quot;modalTitle&quot;&gt;FBA 상세 분석&lt;/h3&gt;
+        &lt;button class=&quot;btn-ghost&quot; style=&quot;width:auto;&quot; onclick=&quot;hideModal()&quot;&gt;닫기&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;modalBody&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+&lt;script&gt;
+  const $ = (id) =&gt; document.getElementById(id);
+
+  // Chart.js default settings for print
+  Chart.defaults.plugins.legend.display = true;
+  Chart.defaults.plugins.tooltip.enabled = true;
+  Chart.defaults.scale.ticks.autoSkip = false;
+  Chart.defaults.scale.ticks.maxRotation = 45;
+  Chart.defaults.scale.ticks.minRotation = 0;
+
+  const toDateKey = (v) =&gt; {
+    if (!v) return null;
+    if (/\d{4}-\d{2}-\d{2}/.test(v)) return v;
+    const m = v.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+    if (m) {
+      const y = m[1], mm = (&#x27;0&#x27; + m[2]).slice(-2), dd = (&#x27;0&#x27; + m[3]).slice(-2);
+      return `${y}-${mm}-${dd}`;
+    }
+    const d = new Date(v);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear(), mm = (&#x27;0&#x27;+(d.getMonth()+1)).slice(-2), dd = (&#x27;0&#x27;+d.getDate()).slice(-2);
+      return `${y}-${mm}-${dd}`;
+    }
+    return null;
+  };
+
+  let raw = []; let data = []; let charts = {};
+  let focusStart, focusEnd;
+  let tier2Threshold = 2;
+  let tier3Threshold = 4;
+
+  function togglePaste(){ $(&#x27;pastePanel&#x27;).classList.toggle(&#x27;hidden&#x27;); }
+
+  function loadSample(){
+    const students = [&#x27;김민주&#x27;,&#x27;장재형&#x27;,&#x27;박민혁&#x27;,&#x27;김영민&#x27;,&#x27;윤세민&#x27;,&#x27;최윤호&#x27;,&#x27;이서진&#x27;,&#x27;박지우&#x27;,&#x27;정하늘&#x27;,&#x27;최민서&#x27;];
+    const behaviors = [&#x27;신체적 공격&#x27;,&#x27;자해&#x27;,&#x27;수업방해&#x27;,&#x27;이탈&#x27;,&#x27;파괴&#x27;,&#x27;언어폭력&#x27;,&#x27;과제거부&#x27;,&#x27;소리지르기&#x27;];
+    const functions = [&#x27;성인의 관심&#x27;,&#x27;과제/요구 회피&#x27;,&#x27;유형물/활동 획득&#x27;,&#x27;감각 추구&#x27;,&#x27;감각 회피&#x27;,&#x27;또래 관심&#x27;];
+    const settings = [&#x27;교실&#x27;,&#x27;복도&#x27;,&#x27;체육관&#x27;,&#x27;급식실&#x27;,&#x27;특별실&#x27;,&#x27;화장실&#x27;,&#x27;운동장&#x27;,&#x27;도서관&#x27;];
+    const antecedents = [&#x27;과제 제시&#x27;,&#x27;전환 시간&#x27;,&#x27;또래 접근&#x27;,&#x27;지시 제공&#x27;,&#x27;선호 활동 종료&#x27;,&#x27;대기 시간&#x27;];
+    const consequences = [&#x27;관심 제공&#x27;,&#x27;과제 중단&#x27;,&#x27;타임아웃&#x27;,&#x27;무시&#x27;,&#x27;재지시&#x27;,&#x27;물건 제공&#x27;];
+
+    raw = [];
+    const start = new Date(&#x27;2025-01-01&#x27;);
+    for (let i=0;i&lt;250;i++){
+      const d = new Date(start.getTime() + Math.random()*1000*60*60*24*330);
+      const y = d.getFullYear(), m = (d.getMonth()+1), day=d.getDate();
+      const hh = 9 + Math.floor(Math.random()*8);
+      const timeBlock = `${hh}시`;
+      const dow = [&#x27;일&#x27;,&#x27;월&#x27;,&#x27;화&#x27;,&#x27;수&#x27;,&#x27;목&#x27;,&#x27;금&#x27;,&#x27;토&#x27;][d.getDay()];
+      raw.push({
+        &#x27;날짜&#x27;: `${y}. ${m}. ${day}`,
+        &#x27;시간대&#x27;: timeBlock,
+        &#x27;요일&#x27;: dow,
+        &#x27;학생&#x27;: students[Math.floor(Math.random()*students.length)],
+        &#x27;행동&#x27;: behaviors[Math.floor(Math.random()*behaviors.length)],
+        &#x27;강도&#x27;: 1 + Math.floor(Math.random()*5),
+        &#x27;기능&#x27;: functions[Math.floor(Math.random()*functions.length)],
+        &#x27;장소&#x27;: settings[Math.floor(Math.random()*settings.length)],
+        &#x27;선행사건&#x27;: antecedents[Math.floor(Math.random()*antecedents.length)],
+        &#x27;결과&#x27;: consequences[Math.floor(Math.random()*consequences.length)]
+      });
+    }
+    $(&#x27;status&#x27;).textContent = `샘플 데이터 ${raw.length}행 로드`;
+    setupMapping();
+  }
+
+  $(&#x27;fileInput&#x27;).addEventListener(&#x27;change&#x27;, (e)=&gt;{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=&gt;{
+      const result = Papa.parse(ev.target.result, { header:true, skipEmptyLines:true });
+      raw = result.data;
+      $(&#x27;status&#x27;).textContent = `${file.name}에서 ${raw.length}행 로드`;
+      setupMapping();
+    };
+    reader.readAsText(file);
+  });
+
+  function parsePaste(){
+    const text = $(&#x27;pasteData&#x27;).value.trim();
+    if(!text){ alert(&#x27;데이터를 붙여넣어 주세요.&#x27;); return; }
+    const result = Papa.parse(text, { header:true, skipEmptyLines:true });
+    raw = result.data;
+    $(&#x27;status&#x27;).textContent = `붙여넣기에서 ${raw.length}행 로드`;
+    setupMapping();
+  }
+
+  function fillSelect(selId, headers, autoKeys){
+    const sel = $(selId);
+    sel.innerHTML = &#x27;&lt;option value=&quot;&quot;&gt;선택&lt;/option&gt;&#x27;;
+    headers.forEach(h=&gt;{
+      const opt = document.createElement(&#x27;option&#x27;);
+      opt.value = h; opt.textContent = h;
+      sel.appendChild(opt);
+    });
+    for(const key of autoKeys){
+      const found = headers.find(h=&gt; h.includes(key));
+      if(found){ sel.value = found; break; }
+    }
+    sel.onchange = checkReady;
+  }
+
+  function setupMapping(){
+    if(!raw || raw.length===0) return;
+    $(&#x27;mapPanel&#x27;).classList.remove(&#x27;hidden&#x27;);
+    const headers = Object.keys(raw[0]);
+    fillSelect(&#x27;mapDate&#x27;, headers, [&#x27;날짜&#x27;,&#x27;date&#x27;,&#x27;일&#x27;]);
+    fillSelect(&#x27;mapTime&#x27;, headers, [&#x27;시간대&#x27;,&#x27;시간&#x27;,&#x27;시대&#x27;,&#x27;time&#x27;]);
+    fillSelect(&#x27;mapDow&#x27;, headers, [&#x27;요일&#x27;,&#x27;dow&#x27;]);
+    fillSelect(&#x27;mapStudent&#x27;, headers, [&#x27;학생&#x27;,&#x27;이름&#x27;,&#x27;student&#x27;]);
+    fillSelect(&#x27;mapBehavior&#x27;, headers, [&#x27;행동&#x27;,&#x27;problem&#x27;,&#x27;behavior&#x27;]);
+    fillSelect(&#x27;mapIntensity&#x27;, headers, [&#x27;강도&#x27;,&#x27;점수&#x27;,&#x27;intensity&#x27;,&#x27;severity&#x27;]);
+    fillSelect(&#x27;mapFunction&#x27;, headers, [&#x27;기능&#x27;,&#x27;function&#x27;]);
+    fillSelect(&#x27;mapSetting&#x27;, headers, [&#x27;장소&#x27;,&#x27;setting&#x27;,&#x27;위치&#x27;,&#x27;교실&#x27;]);
+    fillSelect(&#x27;mapAntecedent&#x27;, headers, [&#x27;선행&#x27;,&#x27;antecedent&#x27;,&#x27;전&#x27;]);
+    fillSelect(&#x27;mapConsequence&#x27;, headers, [&#x27;결과&#x27;,&#x27;consequence&#x27;,&#x27;후&#x27;]);
+    checkReady();
+  }
+
+  function checkReady(){
+    const req = [&#x27;mapDate&#x27;,&#x27;mapTime&#x27;,&#x27;mapStudent&#x27;,&#x27;mapBehavior&#x27;,&#x27;mapIntensity&#x27;];
+    const ok = req.every(id =&gt; $(id).value);
+    $(&#x27;btnAnalyze&#x27;).disabled = !ok;
+  }
+
+  function runAnalysis(){
+    const totalStudents = parseInt($(&#x27;totalStudents&#x27;).value)||0;
+    focusStart = $(&#x27;focusStart&#x27;).value;
+    focusEnd = $(&#x27;focusEnd&#x27;).value;
+    tier2Threshold = parseInt($(&#x27;tier2Threshold&#x27;).value) || 2;
+    tier3Threshold = parseInt($(&#x27;tier3Threshold&#x27;).value) || 4;
+
+    const kDate = $(&#x27;mapDate&#x27;).value;
+    const kTime = $(&#x27;mapTime&#x27;).value;
+    const kDow = $(&#x27;mapDow&#x27;).value;
+    const kStudent = $(&#x27;mapStudent&#x27;).value;
+    const kBehavior = $(&#x27;mapBehavior&#x27;).value;
+    const kIntensity = $(&#x27;mapIntensity&#x27;).value;
+    const kFunction = $(&#x27;mapFunction&#x27;).value;
+    const kSetting = $(&#x27;mapSetting&#x27;).value;
+    const kAntecedent = $(&#x27;mapAntecedent&#x27;).value;
+    const kConsequence = $(&#x27;mapConsequence&#x27;).value;
+
+    data = raw.map(r=&gt; ({
+      dateKey: toDateKey(r[kDate]),
+      time: (r[kTime]||&#x27;&#x27;).toString(),
+      dow: (r[kDow]||&#x27;&#x27;).toString(),
+      student: (r[kStudent]||&#x27;&#x27;).toString(),
+      behavior: (r[kBehavior]||&#x27;&#x27;).toString(),
+      intensity: parseInt(r[kIntensity])||0,
+      func: (r[kFunction]||&#x27;&#x27;).toString(),
+      setting: (r[kSetting]||&#x27;&#x27;).toString(),
+      antecedent: (r[kAntecedent]||&#x27;&#x27;).toString(),
+      consequence: (r[kConsequence]||&#x27;&#x27;).toString()
+    })).filter(d=&gt; d.dateKey);
+
+    const s = $(&#x27;startDate&#x27;).value, e = $(&#x27;endDate&#x27;).value;
+    const inRange = d =&gt; (!s || d.dateKey&gt;=s) &amp;&amp; (!e || d.dateKey&lt;=e);
+    data = data.filter(inRange);
+
+    const uniq = (arr)=&gt; Array.from(new Set(arr));
+    const uniqueStudents = uniq(data.map(d=&gt;d.student)).filter(Boolean);
+
+    // Calculate statistics
+    const avgIntensity = data.length &gt; 0 ? (data.reduce((s,d)=&gt;s+d.intensity,0)/data.length).toFixed(2) : 0;
+    const dateCount = countBy(data, d=&gt;d.dateKey);
+    const peakDay = dateCount.labels[dateCount.counts.indexOf(Math.max(...dateCount.counts))] || &#x27;-&#x27;;
+    
+    // Calculate weekly trend
+    const weeklyData = getWeeklyTrend(data);
+    const trend = weeklyData.trend;
+
+    $(&#x27;dashboard&#x27;).classList.remove(&#x27;hidden&#x27;);
+    $(&#x27;statTotalStudents&#x27;).textContent = totalStudents;
+    $(&#x27;statUniqueStudents&#x27;).textContent = uniqueStudents.length;
+    $(&#x27;statIncidents&#x27;).textContent = data.length;
+    $(&#x27;statAvgIntensity&#x27;).textContent = avgIntensity;
+    $(&#x27;statPeakDay&#x27;).textContent = peakDay;
+    $(&#x27;statTrend&#x27;).textContent = trend;
+
+    // Draw 8 charts
+    drawBar(&#x27;byBehavior&#x27;, countBy(data, d=&gt;d.behavior), &#x27;행동 유형&#x27;);
+    drawBar(&#x27;byWeekday&#x27;, countBy(data, d=&gt; mapWeekday(d)), &#x27;요일&#x27;);
+    drawBar(&#x27;byTime&#x27;, countBy(data, d=&gt;d.time), &#x27;시간대&#x27;);
+    drawBar(&#x27;byIntensity&#x27;, countBy(data, d=&gt;String(d.intensity)), &#x27;강도&#x27;);
+    drawLine(&#x27;byDate&#x27;, countBy(data, d=&gt;d.dateKey, true), &#x27;날짜&#x27;);
+    drawPie(&#x27;byFunction&#x27;, countBy(data, d=&gt;d.func), &#x27;기능&#x27;);
+    drawBar(&#x27;bySetting&#x27;, countBy(data, d=&gt;d.setting), &#x27;장소&#x27;);
+    drawLine(&#x27;weeklyTrend&#x27;, weeklyData, &#x27;주차&#x27;);
+
+    renderTiers();
+    renderStudentList(uniqueStudents);
+    renderTier1Recs();
+    renderPreventiveStrategies();
+    renderEnvironmentRecs();
+    renderTier2GroupRecs();
+    renderTier3IndividualRecs();
+    renderPatternAnalysis();
+    renderRiskMatrix();
+    renderCorrelationAnalysis();
+  }
+
+  function getWeeklyTrend(data) {
+    const weekMap = new Map();
+    data.forEach(d =&gt; {
+      const date = new Date(d.dateKey);
+      const weekNum = getWeekNumber(date);
+      const weekKey = `${date.getFullYear()}-W${weekNum}`;
+      weekMap.set(weekKey, (weekMap.get(weekKey) || 0) + 1);
+    });
+    
+    const sorted = Array.from(weekMap.entries()).sort((a,b) =&gt; a[0].localeCompare(b[0]));
+    const labels = sorted.map(([k,v]) =&gt; k);
+    const counts = sorted.map(([k,v]) =&gt; v);
+    
+    // Calculate trend
+    let trend = &#x27;안정&#x27;;
+    if (counts.length &gt;= 3) {
+      const recent = counts.slice(-3);
+      const avg = recent.reduce((a,b)=&gt;a+b,0)/3;
+      const prevAvg = counts.slice(-6,-3).reduce((a,b)=&gt;a+b,0)/3 || avg;
+      if (avg &gt; prevAvg * 1.2) trend = &#x27;증가↑&#x27;;
+      else if (avg &lt; prevAvg * 0.8) trend = &#x27;감소↓&#x27;;
+    }
+    
+    return { labels, counts, trend };
+  }
+
+  function getWeekNumber(d) {
+    const date = new Date(d.getTime());
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    const week1 = new Date(date.getFullYear(), 0, 4);
+    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  }
+
+  function mapWeekday(d){
+    if (d.dow) return d.dow.replace(&#x27;요일&#x27;,&#x27;&#x27;);
+    const dt = new Date(d.dateKey);
+    return [&#x27;일&#x27;,&#x27;월&#x27;,&#x27;화&#x27;,&#x27;수&#x27;,&#x27;목&#x27;,&#x27;금&#x27;,&#x27;토&#x27;][dt.getDay()];
+  }
+
+  function countBy(arr, keyFn, sortByKey=false){
+    const m = new Map();
+    for(const x of arr){
+      const k = keyFn(x) || &#x27;기타&#x27;;
+      m.set(k, (m.get(k)||0)+1);
+    }
+    let labels = Array.from(m.keys());
+    if(sortByKey) labels = labels.sort();
+    const counts = labels.map(k=&gt; m.get(k));
+    return { labels, counts };
+  }
+
+  function drawBar(canvasId, {labels, counts}, label=&#x27;건수&#x27;){
+    if(charts[canvasId]) charts[canvasId].destroy();
+    const ctx = $(canvasId).getContext(&#x27;2d&#x27;);
+    charts[canvasId] = new Chart(ctx, {
+      type: &#x27;bar&#x27;,
+      data: { 
+        labels, 
+        datasets: [{ 
+          label: label, 
+          data: counts, 
+          backgroundColor:&#x27;rgba(102,126,234,.85)&#x27;,
+          borderColor: &#x27;rgba(102,126,234,1)&#x27;,
+          borderWidth: 1
+        }]
+      },
+      options: { 
+        responsive:true, 
+        maintainAspectRatio:false,
+        plugins: {
+          legend: { display: true },
+          datalabels: { display: true }
+        },
+        scales:{ 
+          y:{ 
+            beginAtZero:true,
+            title: { display: true, text: &#x27;발생 건수&#x27; }
+          },
+          x: {
+            title: { display: true, text: label }
+          }
+        } 
+      }
+    });
+  }
+
+  function drawLine(canvasId, {labels, counts}, label=&#x27;날짜&#x27;){
+    if(charts[canvasId]) charts[canvasId].destroy();
+    const ctx = $(canvasId).getContext(&#x27;2d&#x27;);
+    charts[canvasId] = new Chart(ctx, {
+      type: &#x27;line&#x27;,
+      data: { 
+        labels, 
+        datasets: [{ 
+          label:&#x27;발생 건수&#x27;, 
+          data: counts, 
+          fill:false, 
+          tension:.2,
+          borderColor: &#x27;rgba(102,126,234,1)&#x27;,
+          backgroundColor: &#x27;rgba(102,126,234,0.1)&#x27;
+        }]
+      },
+      options: { 
+        responsive:true, 
+        maintainAspectRatio:false,
+        plugins: {
+          legend: { display: true }
+        },
+        scales:{ 
+          y:{ 
+            beginAtZero:true,
+            title: { display: true, text: &#x27;발생 건수&#x27; }
+          },
+          x: {
+            title: { display: true, text: label }
+          }
+        } 
+      }
+    });
+  }
+
+  function drawPie(canvasId, {labels, counts}, label=&#x27;분포&#x27;){
+    if(charts[canvasId]) charts[canvasId].destroy();
+    const ctx = $(canvasId).getContext(&#x27;2d&#x27;);
+    const colors = [
+      &#x27;rgba(255, 99, 132, 0.8)&#x27;,
+      &#x27;rgba(54, 162, 235, 0.8)&#x27;,
+      &#x27;rgba(255, 206, 86, 0.8)&#x27;,
+      &#x27;rgba(75, 192, 192, 0.8)&#x27;,
+      &#x27;rgba(153, 102, 255, 0.8)&#x27;,
+      &#x27;rgba(255, 159, 64, 0.8)&#x27;
+    ];
+    charts[canvasId] = new Chart(ctx, {
+      type: &#x27;pie&#x27;,
+      data: { 
+        labels, 
+        datasets: [{ 
+          label: label, 
+          data: counts,
+          backgroundColor: colors,
+          borderColor: colors.map(c =&gt; c.replace(&#x27;0.8&#x27;, &#x27;1&#x27;)),
+          borderWidth: 1
+        }]
+      },
+      options: { 
+        responsive:true, 
+        maintainAspectRatio:false,
+        plugins: {
+          legend: { 
+            display: true,
+            position: &#x27;bottom&#x27;
+          }
+        }
+      }
+    });
+  }
+
+  function inFocus(d){ return (!focusStart || d.dateKey&gt;=focusStart) &amp;&amp; (!focusEnd || d.dateKey&lt;=focusEnd); }
+  function beforeFocus(d){ return (focusStart &amp;&amp; d.dateKey &lt; focusStart); }
+
+  function renderTiers(){
+    const byStuTotal = {};
+    const byStuBefore = {};
+    const byStuFocus = {};
+    for(const d of data){
+      byStuTotal[d.student] = (byStuTotal[d.student]||0)+1;
+      if(beforeFocus(d)) byStuBefore[d.student] = (byStuBefore[d.student]||0)+1;
+      if(inFocus(d)) byStuFocus[d.student] = (byStuFocus[d.student]||0)+1;
+    }
+
+    const tier2Entries = Object.entries(byStuTotal).filter(([s,c])=&gt; c&gt;=tier2Threshold &amp;&amp; c&lt;tier3Threshold);
+    const tier3Entries = Object.entries(byStuTotal).filter(([s,c])=&gt; c&gt;=tier3Threshold);
+
+    const isFirstReachInFocus = (student, thr) =&gt; {
+      const pre = byStuBefore[student] || 0;
+      const focus = byStuFocus[student] || 0;
+      return (pre &lt; thr) &amp;&amp; ((pre + focus) &gt;= thr) &amp;&amp; (focus &gt; 0);
+    };
+
+    const tier2Html = tier2Entries.map(([s,c])=&gt;{
+      const bell = isFirstReachInFocus(s, tier2Threshold) ? &#x27; 🔔&#x27; : &#x27;&#x27;;
+      const focusCount = byStuFocus[s] || 0;
+      return `&lt;div class=&quot;student-card&quot;&gt;
+        &lt;a href=&quot;#&quot; onclick=&quot;openFBA(&#x27;${s}&#x27;);return false;&quot;&gt;${s}&lt;/a&gt; 
+        &lt;span class=&quot;pill tier2&quot;&gt;총 ${c}회&lt;/span&gt;
+        &lt;span class=&quot;small&quot;&gt;(집중기간: ${focusCount}회)&lt;/span&gt;${bell}
+      &lt;/div&gt;`;
+    }).join(&#x27;&#x27;) || &#x27;&lt;p class=&quot;small&quot;&gt;해당 없음&lt;/p&gt;&#x27;;
+
+    const tier3Html = tier3Entries.map(([s,c])=&gt;{
+      const bell = isFirstReachInFocus(s, tier3Threshold) ? &#x27; 🔔&#x27; : &#x27;&#x27;;
+      const focusCount = byStuFocus[s] || 0;
+      return `&lt;div class=&quot;student-card&quot;&gt;
+        &lt;a href=&quot;#&quot; onclick=&quot;openFBA(&#x27;${s}&#x27;);return false;&quot;&gt;${s}&lt;/a&gt; 
+        &lt;span class=&quot;pill tier3&quot;&gt;총 ${c}회&lt;/span&gt;
+        &lt;span class=&quot;small&quot;&gt;(집중기간: ${focusCount}회)&lt;/span&gt;${bell}
+      &lt;/div&gt;`;
+    }).join(&#x27;&#x27;) || &#x27;&lt;p class=&quot;small&quot;&gt;해당 없음&lt;/p&gt;&#x27;;
+
+    $(&#x27;tier2Content&#x27;).innerHTML = tier2Html;
+    $(&#x27;tier3Content&#x27;).innerHTML = tier3Html;
+  }
+
+  function renderStudentList(students){
+    students.sort();
+    const html = students.map(s=&gt; {
+      const count = data.filter(d=&gt;d.student===s).length;
+      return `&lt;div class=&quot;student-card&quot;&gt;
+        &lt;a href=&quot;#&quot; onclick=&quot;openFBA(&#x27;${s}&#x27;);return false;&quot;&gt;${s}&lt;/a&gt;
+        &lt;span class=&quot;small&quot;&gt;(${count}건)&lt;/span&gt;
+      &lt;/div&gt;`;
+    }).join(&#x27;&#x27;);
+    $(&#x27;studentList&#x27;).innerHTML = html || &#x27;&lt;p class=&quot;small&quot;&gt;학생 데이터가 없습니다.&lt;/p&gt;&#x27;;
+  }
+
+  function intensityMean(arr){
+    if(arr.length===0) return 0;
+    return (arr.reduce((s,x)=&gt; s+(x.intensity||0),0)/arr.length).toFixed(2);
+  }
+
+  function summarize(arr, key){
+    const m = new Map();
+    for(const x of arr){
+      const k = x[key] || (key===&#x27;func&#x27; ? &#x27;기능 불명&#x27; : &#x27;기타&#x27;);
+      m.set(k, (m.get(k)||0)+1);
+    }
+    const sorted = Array.from(m.entries()).sort((a,b)=&gt; b[1]-a[1]);
+    return sorted.slice(0,5).map(([k,c])=&gt; `${k}(${c})`).join(&#x27;, &#x27;) || &#x27;자료 부족&#x27;;
+  }
+
+  function functionKeyFromText(txt){
+    if(!txt) return &#x27;unknown&#x27;;
+    if (txt.includes(&#x27;관심&#x27;)) return &#x27;attention&#x27;;
+    if (txt.includes(&#x27;회피&#x27;)) return &#x27;escape&#x27;;
+    if (txt.includes(&#x27;유형&#x27;) || txt.includes(&#x27;획득&#x27;)) return &#x27;tangible&#x27;;
+    if (txt.includes(&#x27;감각&#x27;)) {
+      if (txt.includes(&#x27;추구&#x27;)) return &#x27;sensory_seek&#x27;;
+      if (txt.includes(&#x27;회피&#x27;)) return &#x27;sensory_avoid&#x27;;
+      return &#x27;sensory&#x27;;
+    }
+    if (txt.includes(&#x27;또래&#x27;)) return &#x27;peer&#x27;;
+    return &#x27;unknown&#x27;;
+  }
+
+  function fctRecommendations(funcTop){
+    const k = functionKeyFromText(funcTop);
+    const recs = {
+      &#x27;attention&#x27;: [
+        &#x27;대체행동: 손들기/카드/버저 → 주의 제공(DRA)&#x27;,
+        &#x27;선행사건: 3–5분 주기 미니칭찬·페어링&#x27;,
+        &#x27;결과전략: 문제행동엔 주의 최소화(Extinction), 대체행동엔 즉시 주의 제공&#x27;,
+        &#x27;환경: &quot;기다려요/말해요&quot; 카드 상시 휴대&#x27;,
+        &#x27;추가전략: 비조건적 관심 시간(NCR) 설정&#x27;,
+        &#x27;데이터: 주의 제공 빈도 체크리스트 활용&#x27;
+      ],
+      &#x27;escape&#x27;: [
+        &#x27;대체행동: &quot;쉬어요/도와주세요/바꿔주세요&quot; FCT&#x27;,
+        &#x27;선행사건: 난이도 80/20, 시각 작업분석·타이머&#x27;,
+        &#x27;결과전략: 적절 요청엔 짧은 휴식·부분 수정, 문제행동은 과제 완성과 분리&#x27;,
+        &#x27;환경: 전환 예고·프리맥 배치&#x27;,
+        &#x27;추가전략: 선택권 제공, 과제 세분화&#x27;,
+        &#x27;데이터: 과제 완성률 및 휴식 요청 빈도 기록&#x27;
+      ],
+      &#x27;tangible&#x27;: [
+        &#x27;대체행동: &quot;주세요/교환할래요&quot; FCT + 토큰경제(가격표)&#x27;,
+        &#x27;선행사건: 선호도 점검 루틴화&#x27;,
+        &#x27;결과전략: 문제행동엔 접근 차단, 적절 요청엔 차별강화(DRA)&#x27;,
+        &#x27;환경: 대체물 제공(대기 시간용)&#x27;,
+        &#x27;추가전략: 활동 스케줄 시각화, 타이머 활용&#x27;,
+        &#x27;데이터: 선호물 접근 횟수 및 대기 시간 측정&#x27;
+      ],
+      &#x27;sensory_seek&#x27;: [
+        &#x27;대체행동: 동일 기능 감각대안(압박/스퀴즈/손 운동)&#x27;,
+        &#x27;선행사건: 감각 허용 구역·시간표&#x27;,
+        &#x27;결과전략: 문제행동 감각피드백 감소, 대체 감각행동 강화&#x27;,
+        &#x27;환경: 저자극 코너&#x27;,
+        &#x27;추가전략: 감각 다이어트 프로그램 구성&#x27;,
+        &#x27;데이터: 감각 추구 패턴 ABC 기록&#x27;
+      ],
+      &#x27;sensory_avoid&#x27;: [
+        &#x27;대체행동: &quot;싫어요/멈춰요/조용히&quot; FCT&#x27;,
+        &#x27;선행사건: 소음·빛·접촉 조정(헤드폰/조도/거리)&#x27;,
+        &#x27;결과전략: 신호 시 과제 축소·휴식, 문제행동은 자동 종결 방지&#x27;,
+        &#x27;환경: 저자극 동선·전환 예고&#x27;,
+        &#x27;추가전략: 점진적 둔감화 프로그램&#x27;,
+        &#x27;데이터: 환경 자극 수준별 반응 기록&#x27;
+      ],
+      &#x27;peer&#x27;: [
+        &#x27;대체행동: 적절한 또래 상호작용 스킬 교수&#x27;,
+        &#x27;선행사건: 구조화된 또래 활동 제공&#x27;,
+        &#x27;결과전략: 긍정적 상호작용 즉시 강화&#x27;,
+        &#x27;환경: 소그룹 활동 우선 배치&#x27;,
+        &#x27;추가전략: 또래 중재자 활용(peer mediation)&#x27;,
+        &#x27;데이터: 상호작용 빈도 및 질적 평가&#x27;
+      ],
+      &#x27;unknown&#x27;: [
+        &#x27;기능평가 우선: ABC 기록, FAST, MAS 실시&#x27;,
+        &#x27;단문 FCT 4종 보급: 도와주세요/쉬어요/주세요/같이해요&#x27;,
+        &#x27;환경 재구조화: 예측 가능한 일과 구성&#x27;,
+        &#x27;다요소 중재: 선행-행동-결과 전략 동시 적용&#x27;,
+        &#x27;협력팀 구성: 교사-전문가-가족 협의체&#x27;,
+        &#x27;집중 관찰: 2주간 상세 데이터 수집&#x27;
+      ]
+    };
+    return recs[k] || recs[&#x27;unknown&#x27;];
+  }
+
+  function openFBA(student){
+    const rows = data.filter(d=&gt; d.student===student);
+    if(rows.length===0){ alert(&#x27;데이터가 없습니다.&#x27;); return; }
+
+    // Even with 1 data point, provide analysis
+    const topBeh = summarize(rows, &#x27;behavior&#x27;);
+    const funcList = summarize(rows, &#x27;func&#x27;);
+    const topFunc = funcList.split(&#x27;,&#x27;)[0] ? funcList.split(&#x27;,&#x27;)[0].replace(/\(\d+\)/,&#x27;&#x27;).trim() : &#x27;기능 불명&#x27;;
+    const topSet = summarize(rows, &#x27;setting&#x27;);
+    const topDow = summarize(rows.map(r=&gt; ({dow: mapWeekday(r)})), &#x27;dow&#x27;);
+    const topTime = summarize(rows, &#x27;time&#x27;);
+    const topAnt = summarize(rows, &#x27;antecedent&#x27;);
+    const topCon = summarize(rows, &#x27;consequence&#x27;);
+    const meanInt = intensityMean(rows);
+    const first = rows.map(r=&gt;r.dateKey).sort()[0];
+    const last  = rows.map(r=&gt;r.dateKey).sort().slice(-1)[0];
+
+    const recs = fctRecommendations(topFunc).map(x=&gt; `&lt;li&gt;${x}&lt;/li&gt;`).join(&#x27;&#x27;);
+
+    // Additional analysis even for limited data
+    const timePattern = analyzeTimePattern(rows);
+    const escalationPattern = analyzeEscalation(rows);
+    const contextualFactors = analyzeContext(rows);
+
+    const body = `
+      &lt;div class=&quot;grid grid-2&quot;&gt;
+        &lt;div class=&quot;panel&quot;&gt;
+          &lt;h4&gt;기본 정보 (Basic Information)&lt;/h4&gt;
+          &lt;table class=&quot;table&quot;&gt;
+            &lt;tr&gt;&lt;th&gt;분석 범위&lt;/th&gt;&lt;td&gt;${first} ~ ${last} (${rows.length}건)&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;th&gt;상위 행동&lt;/th&gt;&lt;td&gt;${topBeh}&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;th&gt;강도 평균&lt;/th&gt;&lt;td&gt;${meanInt}&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;th&gt;상위 기능&lt;/th&gt;&lt;td&gt;${funcList}&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;th&gt;상위 장소&lt;/th&gt;&lt;td&gt;${topSet}&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;th&gt;요일/시간대&lt;/th&gt;&lt;td&gt;${topDow} / ${topTime}&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;th&gt;주요 선행사건&lt;/th&gt;&lt;td&gt;${topAnt}&lt;/td&gt;&lt;/tr&gt;
+            &lt;tr&gt;&lt;th&gt;주요 결과&lt;/th&gt;&lt;td&gt;${topCon}&lt;/td&gt;&lt;/tr&gt;
+          &lt;/table&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;panel&quot;&gt;
+          &lt;h4&gt;행동 패턴 분석 (Pattern Analysis)&lt;/h4&gt;
+          &lt;div class=&quot;insight-box&quot;&gt;
+            &lt;strong&gt;시간 패턴:&lt;/strong&gt; ${timePattern}&lt;br&gt;
+            &lt;strong&gt;강도 변화:&lt;/strong&gt; ${escalationPattern}&lt;br&gt;
+            &lt;strong&gt;맥락 요인:&lt;/strong&gt; ${contextualFactors}
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      
+      &lt;div class=&quot;panel&quot;&gt;
+        &lt;h4&gt;기능 기반 행동 중재 계획 (BIP)&lt;/h4&gt;
+        &lt;p&gt;&lt;strong&gt;${student}&lt;/strong&gt;의 문제행동은 주로 &lt;u&gt;${topFunc}&lt;/u&gt; 기능으로 나타남 (평균 강도: ${meanInt})&lt;/p&gt;
+        &lt;h5&gt;핵심 중재 전략:&lt;/h5&gt;
+        &lt;ul&gt;${recs}&lt;/ul&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;panel&quot;&gt;
+        &lt;h4&gt;행동 지원 계획 구성요소&lt;/h4&gt;
+        &lt;div class=&quot;grid grid-2&quot;&gt;
+          &lt;div&gt;
+            &lt;h5&gt;예방적 전략 (Antecedent Strategies)&lt;/h5&gt;
+            &lt;ul class=&quot;small&quot;&gt;
+              &lt;li&gt;환경 수정: ${getEnvironmentMod(topSet)}&lt;/li&gt;
+              &lt;li&gt;일과 조정: ${getScheduleMod(topTime)}&lt;/li&gt;
+              &lt;li&gt;선행자극 통제: ${getAntecedentControl(topAnt)}&lt;/li&gt;
+            &lt;/ul&gt;
+          &lt;/div&gt;
+          &lt;div&gt;
+            &lt;h5&gt;교수적 전략 (Teaching Strategies)&lt;/h5&gt;
+            &lt;ul class=&quot;small&quot;&gt;
+              &lt;li&gt;대체기술: ${getReplacementSkill(topFunc)}&lt;/li&gt;
+              &lt;li&gt;대처기술: ${getCopingSkill(meanInt)}&lt;/li&gt;
+              &lt;li&gt;자기관리: ${getSelfManagement(rows.length)}&lt;/li&gt;
+            &lt;/ul&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;panel&quot;&gt;
+        &lt;h4&gt;진행 모니터링 계획 (Progress Monitoring)&lt;/h4&gt;
+        &lt;table class=&quot;table&quot;&gt;
+          &lt;tr&gt;&lt;th&gt;측정 영역&lt;/th&gt;&lt;th&gt;목표&lt;/th&gt;&lt;th&gt;측정 방법&lt;/th&gt;&lt;th&gt;검토 주기&lt;/th&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;문제행동 빈도&lt;/td&gt;&lt;td&gt;주당 ${Math.max(1, Math.floor(rows.length/10))}회 이하&lt;/td&gt;&lt;td&gt;빈도 기록&lt;/td&gt;&lt;td&gt;주간&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;대체행동 사용&lt;/td&gt;&lt;td&gt;일 3회 이상&lt;/td&gt;&lt;td&gt;체크리스트&lt;/td&gt;&lt;td&gt;일간&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;강도 수준&lt;/td&gt;&lt;td&gt;평균 2 이하&lt;/td&gt;&lt;td&gt;5점 척도&lt;/td&gt;&lt;td&gt;주간&lt;/td&gt;&lt;/tr&gt;
+          &lt;tr&gt;&lt;td&gt;기능적 의사소통&lt;/td&gt;&lt;td&gt;80% 성공률&lt;/td&gt;&lt;td&gt;반응 기록&lt;/td&gt;&lt;td&gt;주간&lt;/td&gt;&lt;/tr&gt;
+        &lt;/table&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;panel&quot;&gt;
+        &lt;h4&gt;사례 기록 (Incident Records)&lt;/h4&gt;
+        &lt;table class=&quot;table&quot;&gt;
+          &lt;thead&gt;&lt;tr&gt;&lt;th&gt;날짜&lt;/th&gt;&lt;th&gt;시간&lt;/th&gt;&lt;th&gt;장소&lt;/th&gt;&lt;th&gt;선행&lt;/th&gt;&lt;th&gt;행동&lt;/th&gt;&lt;th&gt;강도&lt;/th&gt;&lt;th&gt;결과&lt;/th&gt;&lt;th&gt;기능&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+          &lt;tbody&gt;
+            ${rows.slice(0,20).map(r=&gt; `&lt;tr&gt;
+              &lt;td&gt;${r.dateKey}&lt;/td&gt;
+              &lt;td&gt;${r.time}&lt;/td&gt;
+              &lt;td&gt;${r.setting||&#x27;-&#x27;}&lt;/td&gt;
+              &lt;td&gt;${r.antecedent||&#x27;-&#x27;}&lt;/td&gt;
+              &lt;td&gt;${r.behavior}&lt;/td&gt;
+              &lt;td&gt;${r.intensity}&lt;/td&gt;
+              &lt;td&gt;${r.consequence||&#x27;-&#x27;}&lt;/td&gt;
+              &lt;td&gt;${r.func||&#x27;-&#x27;}&lt;/td&gt;
+            &lt;/tr&gt;`).join(&#x27;&#x27;)}
+          &lt;/tbody&gt;
+        &lt;/table&gt;
+        &lt;p class=&quot;small&quot;&gt;* 최근 20건 표시. 전체 ${rows.length}건 중.&lt;/p&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;panel&quot;&gt;
+        &lt;h4&gt;팀 협력 및 자원 (Team Collaboration)&lt;/h4&gt;
+        &lt;ul&gt;
+          &lt;li&gt;주 담당자: 담임교사 / 특수교사&lt;/li&gt;
+          &lt;li&gt;지원팀: BCBA, 학교 심리사, 보조교사&lt;/li&gt;
+          &lt;li&gt;가족 참여: 주간 소통, 가정 연계 전략&lt;/li&gt;
+          &lt;li&gt;필요 자원: ${getRequiredResources(topFunc)}&lt;/li&gt;
+          &lt;li&gt;교육 필요: ${getTrainingNeeds(topFunc)}&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;link-row&quot;&gt;
+        &lt;a href=&quot;#&quot; onclick=&quot;window.print();return false;&quot;&gt;🖨️ 인쇄/PDF 저장&lt;/a&gt;
+        &lt;a href=&quot;#&quot; onclick=&quot;exportFBA(&#x27;${student}&#x27;);return false;&quot;&gt;📊 데이터 내보내기&lt;/a&gt;
+      &lt;/div&gt;
+    `;
+
+    $(&#x27;modalTitle&#x27;).textContent = `${student} - 기능적 행동 평가(FBA) 상세 보고서`;
+    $(&#x27;modalBody&#x27;).innerHTML = body;
+    showModal();
+  }
+
+  function analyzeTimePattern(rows) {
+    const times = rows.map(r =&gt; parseInt(r.time) || 0);
+    const morning = times.filter(t =&gt; t &gt;= 9 &amp;&amp; t &lt; 12).length;
+    const afternoon = times.filter(t =&gt; t &gt;= 12 &amp;&amp; t &lt; 17).length;
+    if (morning &gt; afternoon * 1.5) return &#x27;오전 집중형 (전환 시간 주의)&#x27;;
+    if (afternoon &gt; morning * 1.5) return &#x27;오후 집중형 (피로도 관리 필요)&#x27;;
+    return &#x27;전일 분산형 (일관된 지원 필요)&#x27;;
+  }
+
+  function analyzeEscalation(rows) {
+    if (rows.length &lt; 2) return &#x27;데이터 부족 (추가 관찰 필요)&#x27;;
+    const recent = rows.slice(-5);
+    const older = rows.slice(0, -5);
+    const recentAvg = intensityMean(recent);
+    const olderAvg = intensityMean(older);
+    if (recentAvg &gt; olderAvg * 1.2) return &#x27;상승 경향 (즉시 개입 필요)&#x27;;
+    if (recentAvg &lt; olderAvg * 0.8) return &#x27;감소 경향 (중재 효과 긍정적)&#x27;;
+    return &#x27;안정적 (현 전략 유지)&#x27;;
+  }
+
+  function analyzeContext(rows) {
+    const settings = rows.map(r =&gt; r.setting).filter(Boolean);
+    const uniqueSettings = new Set(settings).size;
+    if (uniqueSettings === 1) return &#x27;특정 환경 제한적 (환경 수정 우선)&#x27;;
+    if (uniqueSettings &gt;= 3) return &#x27;다양한 환경 발생 (일반화 전략 필요)&#x27;;
+    return &#x27;제한적 환경 (구조화 강화)&#x27;;
+  }
+
+  function getEnvironmentMod(setting) {
+    const mods = {
+      &#x27;교실&#x27;: &#x27;좌석 배치 조정, 자극 감소 구역 설정&#x27;,
+      &#x27;복도&#x27;: &#x27;전환 시간 구조화, 시각적 단서 제공&#x27;,
+      &#x27;체육관&#x27;: &#x27;활동 수준 조절, 휴식 공간 확보&#x27;,
+      &#x27;급식실&#x27;: &#x27;소음 관리, 대기 시간 단축&#x27;,
+      &#x27;특별실&#x27;: &#x27;예측 가능한 루틴 확립&#x27;,
+      &#x27;화장실&#x27;: &#x27;프라이버시 보장, 시간 제한 설정&#x27;,
+      &#x27;운동장&#x27;: &#x27;구역 설정, 감독 강화&#x27;,
+      &#x27;도서관&#x27;: &#x27;조용한 구역 활용, 개별 공간 제공&#x27;
+    };
+    return mods[setting] || &#x27;환경 평가 후 맞춤 수정&#x27;;
+  }
+
+  function getScheduleMod(time) {
+    const hour = parseInt(time) || 10;
+    if (hour &lt; 10) return &#x27;아침 루틴 강화, 점진적 활동 시작&#x27;;
+    if (hour &lt; 12) return &#x27;중간 휴식 제공, 집중 시간 조절&#x27;;
+    if (hour &lt; 14) return &#x27;점심 전후 전환 지원&#x27;;
+    if (hour &lt; 16) return &#x27;오후 피로 관리, 활동 수준 조절&#x27;;
+    return &#x27;하루 종일 일관된 구조 제공&#x27;;
+  }
+
+  function getAntecedentControl(antecedent) {
+    const controls = {
+      &#x27;과제 제시&#x27;: &#x27;과제 세분화, 선택권 제공, 난이도 조절&#x27;,
+      &#x27;전환 시간&#x27;: &#x27;시각적 타이머, 전환 예고, 전환 루틴&#x27;,
+      &#x27;또래 접근&#x27;: &#x27;사회적 기술 사전 교수, 중재자 배치&#x27;,
+      &#x27;지시 제공&#x27;: &#x27;긍정적 언어 사용, 명확한 기대 설정&#x27;,
+      &#x27;선호 활동 종료&#x27;: &#x27;종료 예고, 다음 활동 예측&#x27;,
+      &#x27;대기 시간&#x27;: &#x27;대기 활동 제공, 시각적 스케줄&#x27;
+    };
+    return controls[antecedent] || &#x27;선행사건 분석 후 개별화&#x27;;
+  }
+
+  function getReplacementSkill(func) {
+    const skills = {
+      &#x27;성인의 관심&#x27;: &#x27;적절한 관심 요청 방법&#x27;,
+      &#x27;과제/요구 회피&#x27;: &#x27;휴식 요청, 도움 요청 기술&#x27;,
+      &#x27;유형물/활동 획득&#x27;: &#x27;요청하기, 차례 기다리기&#x27;,
+      &#x27;감각 추구&#x27;: &#x27;적절한 감각 활동 선택&#x27;,
+      &#x27;감각 회피&#x27;: &#x27;불편함 표현하기&#x27;,
+      &#x27;또래 관심&#x27;: &#x27;또래와 상호작용 시작하기&#x27;
+    };
+    return skills[func] || &#x27;기능적 의사소통 훈련&#x27;;
+  }
+
+  function getCopingSkill(intensity) {
+    if (intensity &gt; 3) return &#x27;심호흡, 이완 기법, 안전 공간 활용&#x27;;
+    if (intensity &gt; 2) return &#x27;자기 진정 전략, 휴식 요청&#x27;;
+    return &#x27;감정 인식, 기본 대처 전략&#x27;;
+  }
+
+  function getSelfManagement(frequency) {
+    if (frequency &gt; 10) return &#x27;자기 모니터링 체계 도입&#x27;;
+    if (frequency &gt; 5) return &#x27;토큰 경제 활용&#x27;;
+    return &#x27;시각적 지원 도구 활용&#x27;;
+  }
+
+  function getRequiredResources(func) {
+    const resources = {
+      &#x27;성인의 관심&#x27;: &#x27;시각적 신호 카드, 타이머, 강화 스케줄표&#x27;,
+      &#x27;과제/요구 회피&#x27;: &#x27;과제 분석표, 선택 보드, 휴식 카드&#x27;,
+      &#x27;유형물/활동 획득&#x27;: &#x27;토큰 보드, 선호도 평가 도구, 타이머&#x27;,
+      &#x27;감각 추구&#x27;: &#x27;감각 도구 키트, 감각 스케줄&#x27;,
+      &#x27;감각 회피&#x27;: &#x27;소음 차단 헤드폰, 조도 조절 도구&#x27;,
+      &#x27;또래 관심&#x27;: &#x27;사회적 이야기, 또래 활동 카드&#x27;
+    };
+    return resources[func] || &#x27;기본 PBS 도구 세트&#x27;;
+  }
+
+  function getTrainingNeeds(func) {
+    const training = {
+      &#x27;성인의 관심&#x27;: &#x27;DRA/DRO 절차, 계획적 무시 기법&#x27;,
+      &#x27;과제/요구 회피&#x27;: &#x27;FCT 실행, 과제 수정 전략&#x27;,
+      &#x27;유형물/활동 획득&#x27;: &#x27;토큰 경제 운영, 차별강화&#x27;,
+      &#x27;감각 추구&#x27;: &#x27;감각 통합 이해, 대체 감각 활동&#x27;,
+      &#x27;감각 회피&#x27;: &#x27;환경 수정, 점진적 둔감화&#x27;,
+      &#x27;또래 관심&#x27;: &#x27;또래 중재 전략, 사회적 기술 교수&#x27;
+    };
+    return training[func] || &#x27;PBS 기본 교육&#x27;;
+  }
+
+  function renderTier1Recs(){
+    if(data.length===0){ $(&#x27;tier1Recs&#x27;).innerHTML=&#x27;데이터가 없습니다.&#x27;; return; }
+    const topDow = countBy(data, d=&gt; mapWeekday(d));
+    const peakDow = (topDow.labels[topDow.counts.indexOf(Math.max(...topDow.counts))]||&#x27;월&#x27;);
+    const topTime = countBy(data, d=&gt; d.time);
+    const peakTime = (topTime.labels[topTime.counts.indexOf(Math.max(...topTime.counts))]||&#x27;10시&#x27;);
+    const topSetting = countBy(data, d=&gt; d.setting);
+    const peakSetting = (topSetting.labels[topSetting.counts.indexOf(Math.max(...topSetting.counts))]||&#x27;교실&#x27;);
+
+    $(&#x27;tier1Recs&#x27;).innerHTML = `
+      &lt;h4&gt;핵심 위험 시간대: ${peakDow}요일 ${peakTime} ${peakSetting}&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;&lt;strong&gt;환경 구조화:&lt;/strong&gt; TEACCH 원리 적용 - 시각적 스케줄, 작업 시스템, 물리적 구조화&lt;/li&gt;
+        &lt;li&gt;&lt;strong&gt;기대행동 교수:&lt;/strong&gt; BST(행동기술훈련) - 설명→시범→연습→피드백 주 3회&lt;/li&gt;
+        &lt;li&gt;&lt;strong&gt;예방적 전략:&lt;/strong&gt; 고위험 시간대 사전 준비(priming), 전환 예고, 선택 기회 제공&lt;/li&gt;
+        &lt;li&gt;&lt;strong&gt;긍정적 행동지원:&lt;/strong&gt; 5:1 긍정적 상호작용 비율, 토큰 경제, 그룹 강화&lt;/li&gt;
+        &lt;li&gt;&lt;strong&gt;위기 대응 체계:&lt;/strong&gt; 3단계 대응(예방-교수-대응), 안전 프로토콜, 팀 역할 분담&lt;/li&gt;
+        &lt;li&gt;&lt;strong&gt;데이터 기반 의사결정:&lt;/strong&gt; 일일 체크인, 주간 팀 미팅, 월간 검토&lt;/li&gt;
+        &lt;li&gt;&lt;strong&gt;가정 연계:&lt;/strong&gt; 일관된 전략 적용, 가정용 시각 지원, 주간 소통&lt;/li&gt;
+        &lt;li&gt;&lt;strong&gt;교직원 역량 강화:&lt;/strong&gt; PBS 기본 교육, 기능평가 이해, 중재 충실도 점검&lt;/li&gt;
+      &lt;/ul&gt;
+    `;
+  }
+
+  function renderPreventiveStrategies() {
+    const strategies = `
+      &lt;h4&gt;1. 선행사건 기반 예방 (Antecedent-Based Prevention)&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;환경 재구성: 자극 통제, 물리적 배치 최적화&lt;/li&gt;
+        &lt;li&gt;일과 수정: 고선호-저선호 활동 교대 배치&lt;/li&gt;
+        &lt;li&gt;선택 제공: 과제, 순서, 도구 선택권&lt;/li&gt;
+        &lt;li&gt;사전 준비: 5분 전 예고, 시각적 단서&lt;/li&gt;
+      &lt;/ul&gt;
+      
+      &lt;h4&gt;2. 설정 사건 수정 (Setting Event Modifications)&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;생리적 요인: 수면, 영양, 약물 관리&lt;/li&gt;
+        &lt;li&gt;정서적 요인: 아침 체크인, 감정 온도계&lt;/li&gt;
+        &lt;li&gt;사회적 요인: 또래 관계 모니터링&lt;/li&gt;
+        &lt;li&gt;환경적 요인: 소음, 조명, 온도 조절&lt;/li&gt;
+      &lt;/ul&gt;
+      
+      &lt;h4&gt;3. 행동 모멘텀 전략 (Behavioral Momentum)&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;고확률 요구 시퀀스 (3-5개)&lt;/li&gt;
+        &lt;li&gt;선호 활동으로 시작&lt;/li&gt;
+        &lt;li&gt;성공 경험 누적&lt;/li&gt;
+        &lt;li&gt;점진적 난이도 상승&lt;/li&gt;
+      &lt;/ul&gt;
+    `;
+    $(&#x27;preventiveStrategies&#x27;).innerHTML = strategies;
+  }
+
+  function renderEnvironmentRecs() {
+    const recs = `
+      &lt;h4&gt;1. 물리적 환경 구조화&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;명확한 경계 설정: 활동 영역 구분&lt;/li&gt;
+        &lt;li&gt;시각적 단서: 라벨, 색상 코딩, 동선 표시&lt;/li&gt;
+        &lt;li&gt;감각 친화적 공간: 조용한 구역, 휴식 공간&lt;/li&gt;
+        &lt;li&gt;접근성: 필요 자료 쉽게 접근 가능&lt;/li&gt;
+      &lt;/ul&gt;
+      
+      &lt;h4&gt;2. 시간적 환경 구조화&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;예측 가능한 일과: 일관된 루틴&lt;/li&gt;
+        &lt;li&gt;시각적 스케줄: 개별/학급 스케줄&lt;/li&gt;
+        &lt;li&gt;전환 지원: 타이머, 전환 신호&lt;/li&gt;
+        &lt;li&gt;유연한 속도: 개별 속도 허용&lt;/li&gt;
+      &lt;/ul&gt;
+      
+      &lt;h4&gt;3. 사회적 환경 최적화&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;또래 지원 체계: 버디 시스템&lt;/li&gt;
+        &lt;li&gt;성인 지원 비율: 필요시 1:1 지원&lt;/li&gt;
+        &lt;li&gt;긍정적 학급 문화: 포용, 지지&lt;/li&gt;
+        &lt;li&gt;명확한 기대: 학급 규칙 시각화&lt;/li&gt;
+      &lt;/ul&gt;
+    `;
+    $(&#x27;environmentRecs&#x27;).innerHTML = recs;
+  }
+
+  function renderTier2GroupRecs() {
+    const recs = `
+      &lt;h4&gt;Tier 2 소그룹 중재 프로그램&lt;/h4&gt;
+      
+      &lt;div class=&quot;insight-box&quot;&gt;
+        &lt;strong&gt;Check-In/Check-Out (CICO) 프로그램&lt;/strong&gt;
+        &lt;ul&gt;
+          &lt;li&gt;아침 체크인: 목표 설정, 준비도 점검&lt;/li&gt;
+          &lt;li&gt;수업별 피드백: 점수 카드 활용&lt;/li&gt;
+          &lt;li&gt;오후 체크아웃: 목표 달성 검토&lt;/li&gt;
+          &lt;li&gt;가정 연계: 일일 보고서&lt;/li&gt;
+          &lt;li&gt;주간 데이터 검토: 진전도 모니터링&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+      
+      &lt;div class=&quot;insight-box&quot;&gt;
+        &lt;strong&gt;사회적 기술 그룹 (Social Skills Group)&lt;/strong&gt;
+        &lt;ul&gt;
+          &lt;li&gt;주 2회 30분 세션&lt;/li&gt;
+          &lt;li&gt;6-8명 소그룹 구성&lt;/li&gt;
+          &lt;li&gt;역할극, 모델링, 피드백&lt;/li&gt;
+          &lt;li&gt;또래 상호작용 연습&lt;/li&gt;
+          &lt;li&gt;일반화 전략: 교실 적용&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+      
+      &lt;div class=&quot;insight-box&quot;&gt;
+        &lt;strong&gt;자기관리 훈련 (Self-Management)&lt;/strong&gt;
+        &lt;ul&gt;
+          &lt;li&gt;자기 모니터링: 행동 기록&lt;/li&gt;
+          &lt;li&gt;목표 설정: 달성 가능한 단계별 목표&lt;/li&gt;
+          &lt;li&gt;자기 평가: 체크리스트&lt;/li&gt;
+          &lt;li&gt;자기 강화: 토큰/포인트&lt;/li&gt;
+          &lt;li&gt;점진적 독립성 증가&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+      
+      &lt;h4&gt;Tier 2 진행 모니터링&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;주간 데이터 검토 회의&lt;/li&gt;
+        &lt;li&gt;월간 가족 면담&lt;/li&gt;
+        &lt;li&gt;6주 후 효과성 평가&lt;/li&gt;
+        &lt;li&gt;필요시 Tier 3 의뢰 검토&lt;/li&gt;
+      &lt;/ul&gt;
+    `;
+    $(&#x27;tier2GroupRecs&#x27;).innerHTML = recs;
+  }
+
+  function renderTier3IndividualRecs() {
+    const recs = `
+      &lt;h4&gt;Tier 3 개별화 집중 지원&lt;/h4&gt;
+      
+      &lt;div class=&quot;insight-box&quot;&gt;
+        &lt;strong&gt;포괄적 기능평가 (Comprehensive FBA)&lt;/strong&gt;
+        &lt;ul&gt;
+          &lt;li&gt;직접 관찰: ABC 연속 기록&lt;/li&gt;
+          &lt;li&gt;간접 평가: FAST, MAS, QABF&lt;/li&gt;
+          &lt;li&gt;기능 분석: 실험적 조작 (필요시)&lt;/li&gt;
+          &lt;li&gt;생태학적 평가: 전체 환경 분석&lt;/li&gt;
+          &lt;li&gt;팀 기반 가설 개발&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+      
+      &lt;div class=&quot;insight-box&quot;&gt;
+        &lt;strong&gt;개별화 행동지원계획 (Individualized BIP)&lt;/strong&gt;
+        &lt;ul&gt;
+          &lt;li&gt;기능 기반 중재 설계&lt;/li&gt;
+          &lt;li&gt;다요소 중재: 선행-교수-결과&lt;/li&gt;
+          &lt;li&gt;위기 관리 계획 포함&lt;/li&gt;
+          &lt;li&gt;중재 충실도 체크리스트&lt;/li&gt;
+          &lt;li&gt;일일 데이터 수집 체계&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+      
+      &lt;div class=&quot;insight-box&quot;&gt;
+        &lt;strong&gt;집중 개별 교수 (Intensive Instruction)&lt;/strong&gt;
+        &lt;ul&gt;
+          &lt;li&gt;1:1 또는 1:2 비율&lt;/li&gt;
+          &lt;li&gt;일일 30-60분 집중 세션&lt;/li&gt;
+          &lt;li&gt;대체기술 집중 훈련&lt;/li&gt;
+          &lt;li&gt;즉각적 피드백과 강화&lt;/li&gt;
+          &lt;li&gt;체계적 일반화 계획&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+      
+      &lt;div class=&quot;insight-box&quot;&gt;
+        &lt;strong&gt;Wraparound 서비스&lt;/strong&gt;
+        &lt;ul&gt;
+          &lt;li&gt;다학제 팀 구성: 교육, 행동, 의료&lt;/li&gt;
+          &lt;li&gt;가족 중심 계획&lt;/li&gt;
+          &lt;li&gt;지역사회 자원 연계&lt;/li&gt;
+          &lt;li&gt;24시간 지원 체계&lt;/li&gt;
+          &lt;li&gt;전환 계획 수립&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+      
+      &lt;h4&gt;Tier 3 성과 평가&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;일일 진전도 모니터링&lt;/li&gt;
+        &lt;li&gt;주간 팀 검토 회의&lt;/li&gt;
+        &lt;li&gt;월간 BIP 수정 검토&lt;/li&gt;
+        &lt;li&gt;분기별 종합 평가&lt;/li&gt;
+        &lt;li&gt;단계적 지원 감소 계획&lt;/li&gt;
+      &lt;/ul&gt;
+    `;
+    $(&#x27;tier3IndividualRecs&#x27;).innerHTML = recs;
+  }
+
+  function renderPatternAnalysis() {
+    if(data.length === 0) {
+      $(&#x27;patternAnalysis&#x27;).innerHTML = &#x27;&lt;p&gt;데이터가 없습니다.&lt;/p&gt;&#x27;;
+      return;
+    }
+    
+    // Analyze patterns
+    const behaviorPairs = analyzeBehaviorPairs();
+    const temporalPatterns = analyzeTemporalPatterns();
+    const functionPatterns = analyzeFunctionPatterns();
+    
+    const analysis = `
+      &lt;h4&gt;1. 행동 연쇄 분석 (Behavior Chain Analysis)&lt;/h4&gt;
+      &lt;div class=&quot;insight-box&quot;&gt;
+        ${behaviorPairs}
+      &lt;/div&gt;
+      
+      &lt;h4&gt;2. 시간적 패턴 (Temporal Patterns)&lt;/h4&gt;
+      &lt;div class=&quot;insight-box&quot;&gt;
+        ${temporalPatterns}
+      &lt;/div&gt;
+      
+      &lt;h4&gt;3. 기능적 패턴 (Functional Patterns)&lt;/h4&gt;
+      &lt;div class=&quot;insight-box&quot;&gt;
+        ${functionPatterns}
+      &lt;/div&gt;
+      
+      &lt;h4&gt;4. 예측 지표 (Predictive Indicators)&lt;/h4&gt;
+      &lt;ul&gt;
+        &lt;li&gt;고위험 조합: ${getHighRiskCombination()}&lt;/li&gt;
+        &lt;li&gt;보호 요인: ${getProtectiveFactors()}&lt;/li&gt;
+        &lt;li&gt;조기 경고 신호: ${getEarlyWarnings()}&lt;/li&gt;
+      &lt;/ul&gt;
+    `;
+    $(&#x27;patternAnalysis&#x27;).innerHTML = analysis;
+  }
+
+  function analyzeBehaviorPairs() {
+    const pairs = {};
+    data.forEach((d, i) =&gt; {
+      if (i &gt; 0 &amp;&amp; data[i-1].student === d.student) {
+        const pair = `${data[i-1].behavior} → ${d.behavior}`;
+        pairs[pair] = (pairs[pair] || 0) + 1;
+      }
+    });
+    
+    const sorted = Object.entries(pairs).sort((a,b) =&gt; b[1] - a[1]).slice(0, 3);
+    if (sorted.length === 0) return &#x27;연속 행동 패턴 데이터 부족&#x27;;
+    
+    return sorted.map(([pair, count]) =&gt; 
+      `&lt;li&gt;${pair}: ${count}회 (예방 포인트 식별)&lt;/li&gt;`
+    ).join(&#x27;&#x27;);
+  }
+
+  function analyzeTemporalPatterns() {
+    const hourly = {};
+    data.forEach(d =&gt; {
+      const hour = parseInt(d.time) || 0;
+      hourly[hour] = (hourly[hour] || 0) + 1;
+    });
+    
+    const peak = Object.entries(hourly).sort((a,b) =&gt; b[1] - a[1])[0];
+    if (!peak) return &#x27;시간 패턴 분석 불가&#x27;;
+    
+    return `
+      &lt;li&gt;최다 발생 시간: ${peak[0]}시 (${peak[1]}건)&lt;/li&gt;
+      &lt;li&gt;패턴 유형: ${getTimePatternType(hourly)}&lt;/li&gt;
+      &lt;li&gt;권고: ${getTimeRecommendation(peak[0])}&lt;/li&gt;
+    `;
+  }
+
+  function analyzeFunctionPatterns() {
+    const funcByTime = {};
+    data.forEach(d =&gt; {
+      if (!d.func) return;
+      const hour = parseInt(d.time) || 0;
+      const key = `${d.func}-${hour}시`;
+      funcByTime[key] = (funcByTime[key] || 0) + 1;
+    });
+    
+    const sorted = Object.entries(funcByTime).sort((a,b) =&gt; b[1] - a[1]).slice(0, 3);
+    if (sorted.length === 0) return &#x27;기능 패턴 데이터 부족&#x27;;
+    
+    return sorted.map(([key, count]) =&gt; 
+      `&lt;li&gt;${key}: ${count}회&lt;/li&gt;`
+    ).join(&#x27;&#x27;);
+  }
+
+  function getTimePatternType(hourly) {
+    const values = Object.values(hourly);
+    const avg = values.reduce((a,b) =&gt; a+b, 0) / values.length;
+    const variance = values.reduce((sum, v) =&gt; sum + Math.pow(v - avg, 2), 0) / values.length;
+    
+    if (variance &lt; avg * 0.5) return &#x27;균등 분포형&#x27;;
+    if (variance &gt; avg * 2) return &#x27;특정 시간 집중형&#x27;;
+    return &#x27;불규칙 분포형&#x27;;
+  }
+
+  function getTimeRecommendation(peakHour) {
+    const hour = parseInt(peakHour);
+    if (hour &lt; 10) return &#x27;아침 루틴 강화, 단계적 활동 시작&#x27;;
+    if (hour &lt; 12) return &#x27;중간 휴식 제공, 감각 휴식&#x27;;
+    if (hour &lt; 14) return &#x27;점심 전후 구조화된 활동&#x27;;
+    if (hour &lt; 16) return &#x27;오후 에너지 관리, 선택 활동&#x27;;
+    return &#x27;종일 프로그램 검토 필요&#x27;;
+  }
+
+  function getHighRiskCombination() {
+    const combos = {};
+    data.forEach(d =&gt; {
+      const combo = `${d.setting}-${d.time}`;
+      combos[combo] = (combos[combo] || 0) + 1;
+    });
+    
+    const top = Object.entries(combos).sort((a,b) =&gt; b[1] - a[1])[0];
+    return top ? `${top[0]} (${top[1]}건)` : &#x27;패턴 미확인&#x27;;
+  }
+
+  function getProtectiveFactors() {
+    // Analyze days/times with no incidents
+    const allDates = data.map(d =&gt; d.dateKey);
+    const uniqueDates = new Set(allDates);
+    
+    if (uniqueDates.size &lt; 7) return &#x27;더 많은 데이터 필요&#x27;;
+    
+    // Simple heuristic: if certain days have fewer incidents
+    const dowCounts = {};
+    data.forEach(d =&gt; {
+      const dow = mapWeekday(d);
+      dowCounts[dow] = (dowCounts[dow] || 0) + 1;
+    });
+    
+    const minDow = Object.entries(dowCounts).sort((a,b) =&gt; a[1] - b[1])[0];
+    return minDow ? `${minDow[0]}요일 활동/구조` : &#x27;분석 중&#x27;;
+  }
+
+  function getEarlyWarnings() {
+    const warnings = [];
+    
+    // Check intensity escalation
+    const highIntensity = data.filter(d =&gt; d.intensity &gt;= 4).length;
+    if (highIntensity &gt; data.length * 0.2) {
+      warnings.push(&#x27;높은 강도 비율 20% 초과&#x27;);
+    }
+    
+    // Check frequency increase
+    const recent = data.slice(-10);
+    const older = data.slice(-20, -10);
+    if (recent.length &gt; older.length * 1.5) {
+      warnings.push(&#x27;최근 빈도 급증&#x27;);
+    }
+    
+    // Check function diversity
+    const functions = new Set(data.map(d =&gt; d.func).filter(Boolean));
+    if (functions.size &gt;= 4) {
+      warnings.push(&#x27;다중 기능 복잡성&#x27;);
+    }
+    
+    return warnings.length &gt; 0 ? warnings.join(&#x27;, &#x27;) : &#x27;정상 범위&#x27;;
+  }
+
+  function renderRiskMatrix() {
+    const matrix = `
+      &lt;table class=&quot;table&quot;&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;
+            &lt;th&gt;시간대&lt;/th&gt;
+            &lt;th&gt;월&lt;/th&gt;
+            &lt;th&gt;화&lt;/th&gt;
+            &lt;th&gt;수&lt;/th&gt;
+            &lt;th&gt;목&lt;/th&gt;
+            &lt;th&gt;금&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          ${generateRiskMatrixRows()}
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;div class=&quot;small&quot; style=&quot;margin-top: 10px;&quot;&gt;
+        &lt;span style=&quot;background:#C6F6D5; padding:2px 6px;&quot;&gt;낮음(0-1)&lt;/span&gt;
+        &lt;span style=&quot;background:#FED7AA; padding:2px 6px;&quot;&gt;중간(2-3)&lt;/span&gt;
+        &lt;span style=&quot;background:#FED7D7; padding:2px 6px;&quot;&gt;높음(4+)&lt;/span&gt;
+      &lt;/div&gt;
+    `;
+    $(&#x27;riskMatrix&#x27;).innerHTML = matrix;
+  }
+
+  function generateRiskMatrixRows() {
+    const matrix = {};
+    
+    // Build matrix data
+    data.forEach(d =&gt; {
+      const hour = parseInt(d.time) || 0;
+      const dow = mapWeekday(d);
+      const key = `${hour}-${dow}`;
+      matrix[key] = (matrix[key] || 0) + 1;
+    });
+    
+    // Generate rows for hours 9-16
+    const rows = [];
+    for (let hour = 9; hour &lt;= 16; hour++) {
+      const cells = [&#x27;월&#x27;, &#x27;화&#x27;, &#x27;수&#x27;, &#x27;목&#x27;, &#x27;금&#x27;].map(dow =&gt; {
+        const count = matrix[`${hour}-${dow}`] || 0;
+        const color = count === 0 ? &#x27;#f0f0f0&#x27; : 
+                     count &lt;= 1 ? &#x27;#C6F6D5&#x27; :
+                     count &lt;= 3 ? &#x27;#FED7AA&#x27; : &#x27;#FED7D7&#x27;;
+        return `&lt;td style=&quot;background:${color}; text-align:center;&quot;&gt;${count}&lt;/td&gt;`;
+      }).join(&#x27;&#x27;);
+      rows.push(`&lt;tr&gt;&lt;td&gt;${hour}시&lt;/td&gt;${cells}&lt;/tr&gt;`);
+    }
+    
+    return rows.join(&#x27;&#x27;);
+  }
+
+  function renderCorrelationAnalysis() {
+    const analysis = `
+      &lt;h4&gt;1. 행동-강도 상관관계&lt;/h4&gt;
+      &lt;div class=&quot;insight-box&quot;&gt;
+        ${analyzeBehaviorIntensity()}
+      &lt;/div&gt;
+      
+      &lt;h4&gt;2. 기능-장소 상관관계&lt;/h4&gt;
+      &lt;div class=&quot;insight-box&quot;&gt;
+        ${analyzeFunctionSetting()}
+      &lt;/div&gt;
+      
+      &lt;h4&gt;3. 선행사건-결과 효과성&lt;/h4&gt;
+      &lt;div class=&quot;insight-box&quot;&gt;
+        ${analyzeAntecedentConsequence()}
+      &lt;/div&gt;
+    `;
+    $(&#x27;correlationAnalysis&#x27;).innerHTML = analysis;
+  }
+
+  function analyzeBehaviorIntensity() {
+    const behaviorIntensity = {};
+    data.forEach(d =&gt; {
+      if (!behaviorIntensity[d.behavior]) {
+        behaviorIntensity[d.behavior] = [];
+      }
+      behaviorIntensity[d.behavior].push(d.intensity);
+    });
+    
+    const analysis = Object.entries(behaviorIntensity)
+      .map(([behavior, intensities]) =&gt; {
+        const avg = (intensities.reduce((a,b) =&gt; a+b, 0) / intensities.length).toFixed(1);
+        return { behavior, avg: parseFloat(avg), count: intensities.length };
+      })
+      .sort((a,b) =&gt; b.avg - a.avg)
+      .slice(0, 3)
+      .map(({behavior, avg, count}) =&gt; 
+        `&lt;li&gt;${behavior}: 평균 강도 ${avg} (n=${count})&lt;/li&gt;`
+      ).join(&#x27;&#x27;);
+    
+    return analysis || &#x27;데이터 부족&#x27;;
+  }
+
+  function analyzeFunctionSetting() {
+    const funcSetting = {};
+    data.forEach(d =&gt; {
+      if (d.func &amp;&amp; d.setting) {
+        const key = `${d.func} → ${d.setting}`;
+        funcSetting[key] = (funcSetting[key] || 0) + 1;
+      }
+    });
+    
+    const sorted = Object.entries(funcSetting)
+      .sort((a,b) =&gt; b[1] - a[1])
+      .slice(0, 3)
+      .map(([key, count]) =&gt; 
+        `&lt;li&gt;${key}: ${count}회&lt;/li&gt;`
+      ).join(&#x27;&#x27;);
+    
+    return sorted || &#x27;데이터 부족&#x27;;
+  }
+
+  function analyzeAntecedentConsequence() {
+    const antCon = {};
+    data.forEach(d =&gt; {
+      if (d.antecedent &amp;&amp; d.consequence) {
+        const key = `${d.antecedent} → ${d.consequence}`;
+        antCon[key] = (antCon[key] || 0) + 1;
+      }
+    });
+    
+    const sorted = Object.entries(antCon)
+      .sort((a,b) =&gt; b[1] - a[1])
+      .slice(0, 3)
+      .map(([key, count]) =&gt; 
+        `&lt;li&gt;${key}: ${count}회 (패턴 검토 필요)&lt;/li&gt;`
+      ).join(&#x27;&#x27;);
+    
+    return sorted || &#x27;데이터 부족&#x27;;
+  }
+
+  function exportFBA(student) {
+    const rows = data.filter(d =&gt; d.student === student);
+    const csv = Papa.unparse(rows);
+    const blob = new Blob([csv], { type: &#x27;text/csv&#x27; });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement(&#x27;a&#x27;);
+    a.href = url;
+    a.download = `FBA_${student}_${new Date().toISOString().split(&#x27;T&#x27;)[0]}.csv`;
+    a.click();
+  }
+
+  function showModal(){ $(&#x27;modal&#x27;).style.display=&#x27;flex&#x27;; }
+  function hideModal(){ $(&#x27;modal&#x27;).style.display=&#x27;none&#x27;; }
+  function closeModal(e){ if(e.target.id===&#x27;modal&#x27;) hideModal(); }
+
+  window.openFBA = openFBA;
+  window.exportFBA = exportFBA;
+  window.showTab = (ev,id)=&gt;{
+    document.querySelectorAll(&#x27;.tab&#x27;).forEach(t=&gt; t.classList.remove(&#x27;active&#x27;));
+    ev.target.classList.add(&#x27;active&#x27;);
+    document.querySelectorAll(&#x27;.tab-content&#x27;).forEach(x=&gt; x.classList.remove(&#x27;active&#x27;));
+    $(id).classList.add(&#x27;active&#x27;);
+  };
+&lt;/script&gt;
+
+&lt;script&gt;
+(function(){
+  function ensureOverlay(){
+    if(!document.getElementById(&#x27;keZoomOverlay&#x27;)){
+      var wrapper = document.createElement(&#x27;div&#x27;);
+      wrapper.innerHTML = `
+&lt;div class=&quot;ke-zoom-overlay&quot; id=&quot;keZoomOverlay&quot;&gt;
+  &lt;div class=&quot;ke-zoom-close&quot; id=&quot;keZoomClose&quot;&gt;✕&lt;/div&gt;
+  &lt;div class=&quot;ke-zoom-box&quot;&gt;&lt;img id=&quot;keZoomImg&quot; alt=&quot;zoomed chart&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+`;
+      document.body.appendChild(wrapper.firstElementChild);
+    }
+  }
+  function toPNG(canvas){
+    try{
+      return canvas.toDataURL(&#x27;image/png&#x27;, 1.0);
+    }catch(e){ return null; }
+  }
+  function attach(){
+    ensureOverlay();
+    var overlay = document.getElementById(&#x27;keZoomOverlay&#x27;);
+    var img = document.getElementById(&#x27;keZoomImg&#x27;);
+    var close = document.getElementById(&#x27;keZoomClose&#x27;);
+    function hide(){ overlay.style.display = &#x27;none&#x27;; img.src=&#x27;&#x27;; }
+    close.addEventListener(&#x27;click&#x27;, hide);
+    overlay.addEventListener(&#x27;click&#x27;, function(e){ if(e.target===overlay) hide(); });
+    var canvases = document.querySelectorAll(&#x27;canvas&#x27;);
+    canvases.forEach(function(c){
+      c.style.cursor = &#x27;zoom-in&#x27;;
+      c.addEventListener(&#x27;click&#x27;, function(){
+        var url = toPNG(c);
+        if(url){
+          img.src = url;
+          overlay.style.display = &#x27;flex&#x27;;
+        }
+      });
+    });
+  }
+  if(document.readyState===&#x27;loading&#x27;){
+    document.addEventListener(&#x27;DOMContentLoaded&#x27;, attach);
+  }else{
+    attach();
+  }
+})();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;" style="width:100%;height:100%;border:none;border-radius:12px;box-shadow:inset 0 0 0 1px #e5e7eb;"></iframe>
+    </div>
+    <p class="note">📈 원본 대시보드 내의 모든 그래프는 클릭하면 크게 볼 수 있습니다(프레임 내부 확대 기능 탑재).</p>
+  </section>
+
+  <section id="studentChart" class="tabpanel">
+    <div class="controls">
+      <label for="studentSelect">학생 선택:</label>
+      <select id="studentSelect"></select>
+      <button id="downloadPNG">PNG 저장</button>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="chartCanvas" height="160"></canvas>
+    </div>
+    <p class="note">
+      범위: 1학기(1–21주차, 2025-W10~W30) • 2학기(22–28주차, 2025-W33~W39). W31–W32 제외. 21주차와 22주차는 선으로 연결하지 않음.
+    </p>
+  </section>
+</div>
+
+<div class="zoom-overlay" id="zoomOverlay">
+  <div class="zoom-close" id="zoomClose">✕</div>
+  <div class="zoom-box"><img id="zoomImg" alt="zoomed chart"></div>
+</div>
+
+<footer>© Gyeong-eun PBS • Chart zoom: click any chart</footer>
+
+<script>
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => { 
+  tab.addEventListener('click', () => { 
+    document.querySelectorAll('.tab, .tabpanel').forEach(el => el.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.for).classList.add('active');
+  });
+});
+
+// Embedded dataset
+const WEEK_SEQ = ["2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14", "2025-W15", "2025-W16", "2025-W17", "2025-W18", "2025-W19", "2025-W20", "2025-W21", "2025-W22", "2025-W23", "2025-W24", "2025-W25", "2025-W26", "2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39"];
+const WEEK_LABELS = ["1주차", "2주차", "3주차", "4주차", "5주차", "6주차", "7주차", "8주차", "9주차", "10주차", "11주차", "12주차", "13주차", "14주차", "15주차", "16주차", "17주차", "18주차", "19주차", "20주차", "21주차", "22주차", "23주차", "24주차", "25주차", "26주차", "27주차", "28주차"];
+const DATA = {"강규빈": [0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "김민주": [4, 5, 4, 0, 1, 4, 4, 4, 2, 3, 4, 4, 3, 1, 3, 3, 5, 0, 2, 2, 1, 2, 2, 4, 4, 3, 3, 1], "김민준": [0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], "김영민": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "김예원": [0, 1, 0, 0, 1, 0, 2, 2, 0, 2, 1, 1, 1, 1, 2, 3, 2, 0, 1, 0, 0, 0, 0, 2, 0, 4, 3, 0], "김유진": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "김지성": [0, 2, 2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 3, 0, 0, 0, 1, 0, 4, 0, 1, 0, 0], "김태조": [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0], "김효린": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "박가온": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "박다솜": [0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "박민혁": [3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "방선호": [0, 0, 2, 3, 0, 2, 6, 2, 0, 0, 0, 3, 1, 0, 0, 3, 0, 0, 2, 2, 0, 0, 0, 0, 1, 0, 0, 0], "배진수": [1, 1, 0, 0, 2, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0], "손유민": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "안지유": [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "양준민": [2, 2, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "어태원": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], "우서우": [1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], "윤예찬": [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "윤주하": [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "이민혁": [2, 1, 1, 1, 2, 1, 2, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], "이엘": [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "이종원": [0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "이진호": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "이채원": [0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "이한율": [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "이현준": [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "장재형": [1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "장찬": [0, 0, 0, 0, 0, 0, 2, 1, 0, 3, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0], "전성진": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 3, 5, 3, 4, 1, 2, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0], "정민재": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "정재민": [0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "정재윤": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "최우빈": [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "홍밈칸": [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]};
+const STUDENTS = ["강규빈", "김민주", "김민준", "김영민", "김예원", "김유진", "김지성", "김태조", "김효린", "박가온", "박다솜", "박민혁", "방선호", "배진수", "손유민", "안지유", "양준민", "어태원", "우서우", "윤예찬", "윤주하", "이민혁", "이엘", "이종원", "이진호", "이채원", "이한율", "이현준", "장재형", "장찬", "전성진", "정민재", "정재민", "정재윤", "최우빈", "홍밈칸"];
+
+// Populate dropdown
+const studentSelect = document.getElementById('studentSelect');
+if (STUDENTS.length === 0) { STUDENTS.push('데이터 없음'); }
+STUDENTS.forEach(s => {
+  const opt = document.createElement('option');
+  opt.value = s; opt.textContent = s;
+  studentSelect.appendChild(opt);
+});
+
+// Chart setup
+Chart.register(ChartDataLabels);
+const ctx = document.getElementById('chartCanvas').getContext('2d');
+let chart;
+
+function buildDatasetFor(studentName) { 
+  const values = (DATA[studentName] || Array(WEEK_LABELS.length).fill(0)).map(v => (typeof v === 'number' ? v : 0));
+  // Colors: 1~21 red, 22~28 blue
+  const pointBackgroundColor = values.map((_, i) => i < 21 ? '#ef4444' : '#3b82f6');
+  const pointBorderColor = pointBackgroundColor;
+  return { values, pointBackgroundColor, pointBorderColor };
+}
+
+function createChart(studentName) {
+  const ds = buildDatasetFor(studentName);
+  if (chart) { chart.destroy(); }
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: WEEK_LABELS,
+      datasets: [{
+        label: `2025학년도 ${studentName} 학생 위기행동 발생 빈도 그래프`,
+        data: ds.values,
+        borderColor: '#64748b',
+        backgroundColor: 'rgba(100,116,139,0.08)',
+        tension: 0.2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointHitRadius: 12,
+        pointStyle: 'circle',
+        pointBackgroundColor: ds.pointBackgroundColor,
+        pointBorderColor: ds.pointBorderColor,
+        spanGaps: false,
+        segment: { borderColor: ctx => {
+          // Break line between 21st (index 20) and 22nd (index 21)
+          const i = ctx.p0DataIndex;
+          if (i === 20) { return 'rgba(0,0,0,0)'; }
+          return '#94a3b8';
+        }}
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: `2025학년도 ${studentName} 학생 위기행동 발생 빈도 그래프`,
+          font: { size: 18, weight: '600' }
+        },
+        datalabels: {
+          anchor: 'end', align: 'top',
+          formatter: (v) => (v==null ? '' : v),
+          clip: false,
+          offset: 4
+        },
+        tooltip: {
+          callbacks: {
+            title: (items)=> items[0].label,
+            label: (ctx)=> `빈도: ${ctx.parsed.y ?? 0}`
+          }
+        }
+      },
+      scales: {
+        y: {
+          suggestedMin: 0,
+          suggestedMax: 10,
+          ticks: { stepSize: 1 }
+        },
+        x: {
+          ticks: { autoSkip: false, maxRotation: 0, minRotation: 0 }
+        }
+      }
+    }
+  });
+}
+
+// Initial render
+createChart(studentSelect.value);
+
+// Change handler
+studentSelect.addEventListener('change', () => createChart(studentSelect.value));
+
+// Download button
+document.getElementById('downloadPNG').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = `${studentSelect.value}_주차별_위기행동빈도.png`;
+  link.href = document.getElementById('chartCanvas').toDataURL('image/png', 1.0);
+  link.click();
+});
+
+// Parent-page chart zoom
+(function(){
+  const overlay = document.getElementById('zoomOverlay');
+  const img = document.getElementById('zoomImg');
+  const close = document.getElementById('zoomClose');
+  function hide(){ overlay.style.display='none'; img.src=''; }
+  close.addEventListener('click', hide);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) hide(); });
+  document.getElementById('chartCanvas').style.cursor='zoom-in';
+  document.getElementById('chartCanvas').addEventListener('click', ()=>{
+    img.src = document.getElementById('chartCanvas').toDataURL('image/png', 1.0);
+    overlay.style.display = 'flex';
+  });
+})();
+</script>
+</body>
+</html>
