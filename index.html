@@ -134,7 +134,7 @@ footer{text-align:center;color:#64748b;font-size:12px;padding:16px 0}
   &lt;div class=&quot;container&quot;&gt;
     &lt;div class=&quot;panel&quot;&gt;
       &lt;h1&gt;🎯 PBS 통합 분석 대시보드 v3.5-enhanced&lt;/h1&gt;
-      &lt;p class=&quot;muted&quot;&gt;CSV 업로드/붙여넣기 → 필드 매핑 → 기간 설정 → 분석 시작. 집중 기간 내 &#x27;최초 임계 도달(Threshold crossing)&#x27; 학생에 🔔.&lt;/p&gt;
+      &lt;p class=&quot;muted&quot;&gt;CSV/Excel(xlsx) 업로드/붙여넣기 → 필드 매핑 → 기간 설정 → 분석 시작. 집중 기간 내 &#x27;최초 임계 도달(Threshold crossing)&#x27; 학생에 🔔.&lt;/p&gt;
       &lt;div class=&quot;row&quot;&gt;
         &lt;div class=&quot;col&quot;&gt;
           &lt;label&gt;전체 학생 수 (Total students)&lt;/label&gt;
@@ -147,7 +147,7 @@ footer{text-align:center;color:#64748b;font-size:12px;padding:16px 0}
             &lt;button class=&quot;btn-ghost&quot; onclick=&quot;document.getElementById(&#x27;fileInput&#x27;).click()&quot;&gt;📁 파일&lt;/button&gt;
             &lt;button class=&quot;btn-ghost&quot; onclick=&quot;togglePaste()&quot;&gt;📋 붙여넣기&lt;/button&gt;
           &lt;/div&gt;
-          &lt;input id=&quot;fileInput&quot; type=&quot;file&quot; accept=&quot;.csv,.tsv&quot; class=&quot;hidden&quot;/&gt;
+          &lt;input id=&quot;fileInput&quot; type=&quot;file&quot; accept=&quot;.csv,.tsv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel&quot; class=&quot;hidden&quot;/&gt;
         &lt;/div&gt;
       &lt;/div&gt;
       &lt;div id=&quot;pastePanel&quot; class=&quot;row hidden&quot; style=&quot;margin-top:10px;&quot;&gt;
@@ -365,14 +365,50 @@ footer{text-align:center;color:#64748b;font-size:12px;padding:16px 0}
   $(&#x27;fileInput&#x27;).addEventListener(&#x27;change&#x27;, (e)=&gt;{
     const file = e.target.files[0];
     if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev)=&gt;{
-      const result = Papa.parse(ev.target.result, { header:true, skipEmptyLines:true });
-      raw = result.data;
-      $(&#x27;status&#x27;).textContent = `${file.name}에서 ${raw.length}행 로드`;
-      setupMapping();
-    };
-    reader.readAsText(file);
+
+    const fileName = file.name.toLowerCase();
+    const isExcel = fileName.endsWith(&#x27;.xlsx&#x27;) || fileName.endsWith(&#x27;.xls&#x27;);
+
+    if(isExcel){
+      // Parse Excel file using XLSX library
+      const reader = new FileReader();
+      reader.onload = (ev)=&gt;{
+        try {
+          // Access parent&#x27;s XLSX library
+          const XLSX = window.parent.XLSX;
+          if(!XLSX){
+            alert(&#x27;Excel 파싱 라이브러리를 찾을 수 없습니다. 페이지를 새로고침해주세요.&#x27;);
+            return;
+          }
+
+          const data = new Uint8Array(ev.target.result);
+          const workbook = XLSX.read(data, { type: &#x27;array&#x27;, cellDates: true });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { raw: false, defval: &#x27;&#x27; });
+
+          raw = jsonData;
+          $(&#x27;status&#x27;).textContent = `${file.name}에서 ${raw.length}행 로드 (Excel)`;
+          setupMapping();
+        } catch(err){
+          alert(&#x27;Excel 파일 파싱 오류: &#x27; + err.message);
+          console.error(err);
+        }
+      };
+      reader.onerror = ()=&gt;{
+        alert(&#x27;파일 읽기 오류&#x27;);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      // Parse CSV/TSV file using PapaParse
+      const reader = new FileReader();
+      reader.onload = (ev)=&gt;{
+        const result = Papa.parse(ev.target.result, { header:true, skipEmptyLines:true });
+        raw = result.data;
+        $(&#x27;status&#x27;).textContent = `${file.name}에서 ${raw.length}행 로드`;
+        setupMapping();
+      };
+      reader.readAsText(file);
+    }
   });
 
   function parsePaste(){
