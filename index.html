@@ -1613,8 +1613,8 @@ footer{text-align:center;color:#64748b;font-size:12px;padding:16px 0}
 
   <section id="studentChart" class="tabpanel">
     <div class="controls">
-      <label for="excelUpload">📂 엑셀 파일 업로드:</label>
-      <input type="file" id="excelUpload" accept=".xlsx,.xls" style="max-width:300px">
+      <label for="excelUpload">📂 엑셀 파일 업로드 (xlsx, xls):</label>
+      <input type="file" id="excelUpload" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="max-width:320px">
       <button id="loadExcel">데이터 불러오기</button>
     </div>
     <div class="controls">
@@ -1704,6 +1704,13 @@ function dateToWeekNumber(dateValue) {
 
 // Parse Excel file and update DATA
 function parseExcelData(arrayBuffer) {
+  // Check if XLSX library is loaded
+  if (typeof XLSX === 'undefined') {
+    alert('❌ Excel 파싱 라이브러리가 로드되지 않았습니다.\n\n페이지를 새로고침해주세요.');
+    console.error('XLSX library not loaded');
+    return;
+  }
+
   try {
     const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -1839,12 +1846,26 @@ document.getElementById('loadExcel').addEventListener('click', () => {
     return;
   }
 
+  // Validate file type
+  const fileName = file.name.toLowerCase();
+  const validExtensions = ['.xlsx', '.xls'];
+  const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+
+  if (!hasValidExtension) {
+    alert('❌ 지원하지 않는 파일 형식입니다.\n\n지원 형식: .xlsx, .xls\n선택한 파일: ' + file.name);
+    return;
+  }
+
+  console.log('📂 파일 선택됨:', file.name, '크기:', (file.size / 1024).toFixed(2) + 'KB');
+
   const reader = new FileReader();
   reader.onload = (e) => {
+    console.log('✅ 파일 읽기 완료, 파싱 시작...');
     parseExcelData(e.target.result);
   };
   reader.onerror = () => {
-    alert('❌ 파일 읽기 오류');
+    alert('❌ 파일 읽기 오류\n\n파일이 손상되었거나 접근할 수 없습니다.');
+    console.error('FileReader error:', reader.error);
   };
   reader.readAsArrayBuffer(file);
 });
